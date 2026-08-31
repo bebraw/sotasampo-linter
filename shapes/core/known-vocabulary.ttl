@@ -6,7 +6,7 @@ linter:KnownVocabularyTermShape
     a sh:NodeShape ;
     sh:targetNode linter:auditTarget ;
     sh:severity sh:Violation ;
-    sh:message "An RDF term in a configured standard namespace is not present in the pinned vocabulary manifest." ;
+    sh:message "A standard-vocabulary IRI is unknown or is used in a role not allowed by the pinned vocabulary manifest." ;
     dct:source
         <https://www.dublincore.org/specifications/dublin-core/dcmi-terms/> ,
         <https://www.w3.org/TR/owl2-syntax/> ,
@@ -20,15 +20,17 @@ linter:KnownVocabularyTermShape
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
             SELECT DISTINCT $this ?path ?value ?message
             WHERE {
-              {
-                ?subject ?term ?value .
-                BIND(?term AS ?path)
-              }
-              UNION
-              {
-                ?subject rdf:type ?term .
-                BIND(?term AS ?path)
-                BIND(?subject AS ?value)
+                {
+                  ?subject ?term ?value .
+                  BIND(?term AS ?path)
+                  BIND(linter:predicateTerm AS ?requiredRole)
+                }
+                UNION
+                {
+                  ?subject rdf:type ?term .
+                  BIND(?term AS ?path)
+                  BIND(?subject AS ?value)
+                  BIND(linter:classTerm AS ?requiredRole)
               }
               FILTER(isIRI(?term))
               FILTER(
@@ -38,7 +40,7 @@ linter:KnownVocabularyTermShape
                 STRSTARTS(STR(?term), "http://www.w3.org/2004/02/skos/core#") ||
                 STRSTARTS(STR(?term), "http://purl.org/dc/terms/")
               )
-              FILTER NOT EXISTS { ?term linter:knownTerm true }
+              FILTER NOT EXISTS { ?term ?requiredRole true }
               BIND(CONCAT("Unknown standard vocabulary term ", STR(?term), " used by ", STR(?subject)) AS ?message)
             }
         """ ;

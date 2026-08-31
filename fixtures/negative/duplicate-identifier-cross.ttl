@@ -1,0 +1,5 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ex: <https://example.org/> .
+
+ex:first dct:identifier "shared" .
+ex:second dct:identifier "shared" .

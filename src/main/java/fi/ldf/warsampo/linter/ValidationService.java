@@ -30,15 +30,21 @@ final class ValidationService {
 
     ValidationRun run() throws IOException {
         Instant start = Instant.now();
+        RuntimeMetrics.resetPeakHeap();
         List<Path> dataFiles = RdfFiles.discover(options.dataPaths());
         if (dataFiles.isEmpty()) {
             throw new IllegalArgumentException("No RDF files found in the selected data paths.");
         }
 
-        List<Path> shapeFiles = RdfFiles.discoverRequiredDirectories(
-                options.profile().shapeDirectories(options.root(), options.crossModule()));
-        Model shapeModel = loader.loadAll(shapeFiles);
-        Shapes shapes = Shapes.parse(shapeModel.getGraph());
+        Model localShapeModel = loader.loadAll(RdfFiles.discoverRequiredDirectories(
+                options.profile().localShapeDirectories(options.root())));
+        Shapes localShapes = Shapes.parse(localShapeModel.getGraph());
+        Model crossShapeModel = options.crossModule()
+                ? loader.loadAll(RdfFiles.discoverRequiredDirectories(
+                        options.profile().crossShapeDirectories(options.root())))
+                : ModelFactory.createDefaultModel();
+        Shapes crossShapes = options.crossModule() ? Shapes.parse(crossShapeModel.getGraph()) : null;
+        int ruleCount = countRules(localShapeModel) + countRules(crossShapeModel);
 
         Path vocabularyDirectory = options.root().resolve("vocabularies");
         List<Path> vocabularyFiles = RdfFiles.discoverRequiredDirectories(List.of(vocabularyDirectory));
@@ -47,14 +53,16 @@ final class ValidationService {
 
         Set<String> baseline = Baseline.read(options.baselinePath());
         ValidationAccumulator accumulator = options.crossModule()
-                ? validateUnion(dataFiles, shapes, supportModel)
-                : validateModules(dataFiles, shapes, supportModel);
+                ? validateUnion(dataFiles, localShapes, crossShapes, supportModel)
+                : validateModules(dataFiles, localShapes, supportModel);
 
         return ValidationRun.of(
                 accumulator.findings,
                 accumulator.parseFailures,
                 accumulator.modules,
                 accumulator.triples,
+                ruleCount,
+                RuntimeMetrics.peakHeapBytes(),
                 Duration.between(start, Instant.now()),
                 baseline);
     }
@@ -63,21 +71,23 @@ final class ValidationService {
         ValidationAccumulator accumulator = new ValidationAccumulator();
         for (Path file : files) {
             String module = moduleName(file);
+            Model data;
             try {
-                Model data = loader.load(file);
-                long sourceTriples = data.size();
-                data.add(supportModel);
-                collect(shapes, data, module, accumulator);
-                accumulator.modules++;
-                accumulator.triples += sourceTriples;
+                data = loader.load(file);
             } catch (RuntimeException exception) {
                 accumulator.parseFailures.add(module + ": " + rootMessage(exception));
+                continue;
             }
+            long sourceTriples = data.size();
+            collect(shapes, ModelFactory.createUnion(data, supportModel), module, accumulator);
+            accumulator.modules++;
+            accumulator.triples += sourceTriples;
         }
         return accumulator;
     }
 
-    private ValidationAccumulator validateUnion(List<Path> files, Shapes shapes, Model supportModel) throws IOException {
+    private ValidationAccumulator validateUnion(
+            List<Path> files, Shapes localShapes, Shapes crossShapes, Model supportModel) throws IOException {
         boolean temporary = options.tdbPath() == null;
         Path tdbPath = temporary ? Files.createTempDirectory("warsampo-linter-tdb-") : options.tdbPath();
         if (!temporary) {
@@ -88,36 +98,43 @@ final class ValidationService {
         ValidationAccumulator accumulator = new ValidationAccumulator();
         try {
             for (Path file : files) {
+                String module = moduleName(file);
+                Model data;
+                try {
+                    data = loader.load(file);
+                } catch (RuntimeException exception) {
+                    accumulator.parseFailures.add(module + ": " + rootMessage(exception));
+                    continue;
+                }
+
+                long sourceTriples = data.size();
+                collect(localShapes, ModelFactory.createUnion(data, supportModel), module, accumulator);
                 dataset.begin(ReadWrite.WRITE);
                 try {
-                    long before = dataset.getDefaultModel().size();
-                    loader.parseInto(dataset.getDefaultModel(), file);
-                    long after = dataset.getDefaultModel().size();
-                    accumulator.triples += after - before;
-                    accumulator.modules++;
+                    dataset.getDefaultModel().add(data);
                     dataset.commit();
                 } catch (RuntimeException exception) {
                     dataset.abort();
-                    accumulator.parseFailures.add(moduleName(file) + ": " + rootMessage(exception));
+                    throw exception;
                 } finally {
                     dataset.end();
                 }
+                accumulator.triples += sourceTriples;
+                accumulator.modules++;
             }
 
-            if (accumulator.parseFailures.isEmpty()) {
-                dataset.begin(ReadWrite.WRITE);
-                try {
-                    dataset.getDefaultModel().add(supportModel);
-                    dataset.commit();
-                } finally {
-                    dataset.end();
-                }
-                dataset.begin(ReadWrite.READ);
-                try {
-                    collect(shapes, dataset.getDefaultModel(), "@union", accumulator);
-                } finally {
-                    dataset.end();
-                }
+            dataset.begin(ReadWrite.WRITE);
+            try {
+                dataset.getDefaultModel().add(supportModel);
+                dataset.commit();
+            } finally {
+                dataset.end();
+            }
+            dataset.begin(ReadWrite.READ);
+            try {
+                collect(crossShapes, dataset.getDefaultModel(), "@union", accumulator);
+            } finally {
+                dataset.end();
             }
         } finally {
             dataset.close();
@@ -159,6 +176,17 @@ final class ValidationService {
             current = current.getCause();
         }
         return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
+    }
+
+    private static int countRules(Model shapeModel) {
+        return (int) shapeModel
+                .listSubjectsWithProperty(
+                        org.apache.jena.rdf.model.ResourceFactory.createProperty(Finding.SH + "severity"))
+                .toList()
+                .stream()
+                .filter(Resource::isURIResource)
+                .distinct()
+                .count();
     }
 
     private static void requireEmptyDirectory(Path directory) throws IOException {

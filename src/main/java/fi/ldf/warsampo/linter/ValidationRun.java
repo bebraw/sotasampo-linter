@@ -14,6 +14,8 @@ record ValidationRun(
         List<String> parseFailures,
         int modules,
         long triples,
+        int rules,
+        long peakHeapBytes,
         Duration duration) {
 
     boolean hasRegressions() {
@@ -42,6 +44,7 @@ record ValidationRun(
         long info = findings.size() - violations - warnings;
         List<String> lines = new java.util.ArrayList<>();
         lines.add("Validated " + modules + " module(s), " + triples + " triples in " + duration.toMillis() + " ms");
+        lines.add("Rules: " + rules + "; peak JVM heap: " + formatMebibytes(peakHeapBytes) + " MiB");
         lines.add("Findings: " + violations + " violation(s), " + warnings + " warning(s), " + info + " info");
         lines.add("New violations: " + regressions.size());
         if (!parseFailures.isEmpty()) {
@@ -60,6 +63,8 @@ record ValidationRun(
             List<String> parseFailures,
             int modules,
             long triples,
+            int rules,
+            long peakHeapBytes,
             Duration duration,
             Set<String> baseline) {
         List<Finding> sorted = findings.stream().sorted(Finding.ORDER).toList();
@@ -67,6 +72,18 @@ record ValidationRun(
                 .filter(Finding::isViolation)
                 .filter(finding -> !baseline.contains(finding.signature()))
                 .toList();
-        return new ValidationRun(sorted, regressions, List.copyOf(parseFailures), modules, triples, duration);
+        return new ValidationRun(
+                sorted,
+                regressions,
+                List.copyOf(parseFailures),
+                modules,
+                triples,
+                rules,
+                peakHeapBytes,
+                duration);
+    }
+
+    private static String formatMebibytes(long bytes) {
+        return String.format(java.util.Locale.ROOT, "%.1f", bytes / 1024.0 / 1024.0);
     }
 }

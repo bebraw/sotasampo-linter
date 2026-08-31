@@ -33,6 +33,14 @@ class ValidationServiceTest {
     }
 
     @Test
+    void knownVocabularyTermsMustBeUsedInTheirDeclaredRole() throws Exception {
+        ValidationRun run = validate("fixtures/negative/standard-term-role-invalid.ttl", false, null, null);
+
+        assertEquals(2, run.findings().size());
+        assertTrue(run.findings().stream().allMatch(finding -> finding.rule().contains("KnownVocabularyTermShape")));
+    }
+
+    @Test
     void strictParserRejectsIllTypedLiteral() throws Exception {
         ValidationRun run = validate("fixtures/negative/ill-typed.ttl", false, null, null);
 
@@ -77,6 +85,43 @@ class ValidationServiceTest {
         assertTrue(run.parseFailures().isEmpty());
         assertEquals(1, run.modules());
         assertFalse(run.hasRegressions());
+    }
+
+    @Test
+    void crossModuleModeValidatesSuccessfullyParsedModules(@TempDir Path temporaryDirectory) throws Exception {
+        ValidationOptions options = new ValidationOptions(
+                root,
+                List.of(
+                        root.resolve("fixtures/negative/core-invalid.ttl"),
+                        root.resolve("fixtures/negative/ill-typed.ttl")),
+                Profile.CORE,
+                true,
+                null,
+                null,
+                null,
+                null,
+                temporaryDirectory.resolve("partial-tdb"));
+
+        ValidationRun run = new ValidationService(options).run();
+
+        assertEquals(1, run.modules());
+        assertEquals(1, run.parseFailures().size());
+        assertEquals(1, run.findings().size());
+    }
+
+    @Test
+    void integrationProfileFindsDuplicateIdentifiers(@TempDir Path temporaryDirectory) throws Exception {
+        ValidationRun run = validate(
+                "fixtures/negative/duplicate-identifier-cross.ttl",
+                Profile.CORE,
+                true,
+                null,
+                null,
+                temporaryDirectory.resolve("duplicate-tdb"));
+
+        assertEquals(1, run.findings().size());
+        assertTrue(run.findings().getFirst().rule().contains("DuplicateIdentifierShape"));
+        assertTrue(run.findings().getFirst().isWarning());
     }
 
     @Test

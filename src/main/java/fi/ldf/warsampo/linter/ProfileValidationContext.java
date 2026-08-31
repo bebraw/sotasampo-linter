@@ -22,7 +22,7 @@ final class ProfileValidationContext {
 
     static ProfileValidationContext load(Path root, Profile profile) throws IOException {
         RdfLoader loader = new RdfLoader();
-        List<Path> shapeFiles = RdfFiles.discoverRequiredDirectories(profile.shapeDirectories(root, false));
+        List<Path> shapeFiles = RdfFiles.discoverRequiredDirectories(profile.localShapeDirectories(root));
         Shapes shapes = Shapes.parse(loader.loadAll(shapeFiles).getGraph());
         Model support = loader.loadAll(RdfFiles.discoverRequiredDirectories(List.of(root.resolve("vocabularies"))));
         support.add(LinterVocabulary.AUDIT_TARGET, RDF.type, LinterVocabulary.AUDIT_TARGET_CLASS);

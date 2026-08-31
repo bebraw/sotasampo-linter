@@ -16,19 +16,24 @@ linter:InternalReferenceShape
             PREFIX linter: <https://w3id.org/warsampo-linter#>
             SELECT DISTINCT $this ?path ?value ?message
             WHERE {
-              $this linter:internalNamespace ?namespace .
-              ?subject ?path ?value .
-              FILTER(isIRI(?value))
-              FILTER(STRSTARTS(STR(?value), STR(?namespace)))
+              {
+                SELECT DISTINCT ?path ?value
+                WHERE {
+                  $this linter:internalNamespace ?namespace .
+                  ?subject ?path ?value .
+                  FILTER(isIRI(?value))
+                  FILTER(STRSTARTS(STR(?value), STR(?namespace)))
+                }
+              }
               FILTER NOT EXISTS { ?value ?descriptionProperty ?descriptionValue }
-              BIND(CONCAT("Unresolved internal IRI ", STR(?value), " referenced by ", STR(?subject)) AS ?message)
+              BIND(CONCAT("Unresolved internal IRI ", STR(?value)) AS ?message)
             }
         """ ;
     ] .
 
 linter:EventParticipantTypeShape
     a sh:NodeShape ;
-    sh:targetSubjectsOf crm:P11_had_participant ;
+    sh:targetNode linter:auditTarget ;
     sh:severity sh:Warning ;
     sh:message "A WarSampo event participant must resolve to a typed person or military unit." ;
     dct:source <https://w3id.org/warsampo-linter/requirements/event-participant> ;
@@ -38,14 +43,20 @@ linter:EventParticipantTypeShape
         sh:select """
             PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
             PREFIX wsc: <http://ldf.fi/schema/warsa/>
-            SELECT DISTINCT $this (crm:P11_had_participant AS ?path) ?value
+            SELECT DISTINCT $this (crm:P11_had_participant AS ?path) ?value ?message
             WHERE {
-              $this crm:P11_had_participant ?value .
-              FILTER(STRSTARTS(STR(?value), "http://ldf.fi/warsa/actors/"))
+              {
+                SELECT DISTINCT ?value
+                WHERE {
+                  ?event crm:P11_had_participant ?value .
+                  FILTER(STRSTARTS(STR(?value), "http://ldf.fi/warsa/actors/"))
+                }
+              }
               FILTER NOT EXISTS {
                 ?value a ?actorType .
                 VALUES ?actorType { wsc:Person wsc:MilitaryUnit }
               }
+              BIND(CONCAT("Untyped participant ", STR(?value)) AS ?message)
             }
         """ ;
     ] .

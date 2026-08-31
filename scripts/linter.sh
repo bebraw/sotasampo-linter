@@ -14,6 +14,7 @@ if [ ! -f "$jar_path" ] || find \
 fi
 
 docker run --rm \
+  --env JAVA_TOOL_OPTIONS=-Xmx4g \
   --volume "$project_root:/workspace" \
   --workdir /workspace \
   eclipse-temurin:21-jre \

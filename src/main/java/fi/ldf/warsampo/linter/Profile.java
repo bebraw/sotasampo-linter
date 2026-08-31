@@ -18,7 +18,7 @@ enum Profile {
         }
     }
 
-    List<Path> shapeDirectories(Path root, boolean crossModule) {
+    List<Path> localShapeDirectories(Path root) {
         List<Path> paths = new ArrayList<>();
         paths.add(root.resolve("shapes/core"));
         if (this == SKOS || this == WARSAMPO) {
@@ -26,9 +26,23 @@ enum Profile {
         }
         if (this == WARSAMPO) {
             paths.add(root.resolve("shapes/warsampo/local"));
-            if (crossModule) {
-                paths.add(root.resolve("shapes/warsampo/cross"));
-            }
+        }
+        return List.copyOf(paths);
+    }
+
+    List<Path> crossShapeDirectories(Path root) {
+        List<Path> paths = new ArrayList<>();
+        paths.add(root.resolve("shapes/integration"));
+        if (this == WARSAMPO) {
+            paths.add(root.resolve("shapes/warsampo/cross"));
+        }
+        return List.copyOf(paths);
+    }
+
+    List<Path> shapeDirectories(Path root, boolean crossModule) {
+        List<Path> paths = new ArrayList<>(localShapeDirectories(root));
+        if (crossModule) {
+            paths.addAll(crossShapeDirectories(root));
         }
         return List.copyOf(paths);
     }

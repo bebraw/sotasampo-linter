@@ -5,7 +5,7 @@
 
 linter:BirthDeathChronologyShape
     a sh:NodeShape ;
-    sh:targetClass wsc:Person ;
+    sh:targetNode linter:auditTarget ;
     sh:severity sh:Violation ;
     sh:message "A person's latest possible birth date is after their earliest possible death date." ;
     dct:source <https://w3id.org/warsampo-linter/requirements/life-event-chronology> ;
@@ -18,16 +18,16 @@ linter:BirthDeathChronologyShape
             SELECT DISTINCT $this (crm:P4_has_time-span AS ?path) ?value ?message
             WHERE {
               ?birth a wsc:Birth ;
-                     crm:P98_brought_into_life $this ;
+                     crm:P98_brought_into_life ?person ;
                      crm:P4_has_time-span ?birthSpan .
               ?birthSpan crm:P82b_end_of_the_end ?birthEnd .
               ?death a wsc:Death ;
-                     crm:P100_was_death_of $this ;
+                     crm:P100_was_death_of ?person ;
                      crm:P4_has_time-span ?deathSpan .
               ?deathSpan crm:P82a_begin_of_the_begin ?deathBegin .
               FILTER(?birthEnd > ?deathBegin)
-              BIND(?death AS ?value)
-              BIND(CONCAT("Birth ends ", STR(?birthEnd), " but death begins ", STR(?deathBegin)) AS ?message)
+              BIND(?person AS ?value)
+              BIND(CONCAT("Person ", STR(?person), " has birth end ", STR(?birthEnd), " after death begin ", STR(?deathBegin)) AS ?message)
             }
         """ ;
     ] .
