@@ -1,0 +1,106 @@
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+# These are deliberately exact IRI substitutions. The guarded WHERE clauses make
+# each update a no-op after the first successful application.
+
+linter:RepairRdfsSubClassof
+    a linter:Repair ;
+    linter:safety linter:Automatic ;
+    linter:repairsRule linter:KnownVocabularyTermShape ;
+    linter:badIri rdfs:subClassof ;
+    linter:replacementIri rdfs:subClassOf ;
+    dash:suggestionGenerator [
+        a dash:SPARQLUpdateSuggestionGenerator ;
+        sh:message "Replace rdfs:subClassof with rdfs:subClassOf" ;
+        sh:update """
+            DELETE { ?s <http://www.w3.org/2000/01/rdf-schema#subClassof> ?o }
+            INSERT { ?s <http://www.w3.org/2000/01/rdf-schema#subClassOf> ?o }
+            WHERE  { ?s <http://www.w3.org/2000/01/rdf-schema#subClassof> ?o } ;
+            DELETE { ?s a <http://www.w3.org/2000/01/rdf-schema#subClassof> }
+            INSERT { ?s a <http://www.w3.org/2000/01/rdf-schema#subClassOf> }
+            WHERE  { ?s a <http://www.w3.org/2000/01/rdf-schema#subClassof> }
+        """
+    ] .
+
+linter:RepairRdfsProperty
+    a linter:Repair ;
+    linter:safety linter:Automatic ;
+    linter:repairsRule linter:KnownVocabularyTermShape ;
+    linter:badIri rdfs:Property ;
+    linter:replacementIri rdf:Property ;
+    dash:suggestionGenerator [
+        a dash:SPARQLUpdateSuggestionGenerator ;
+        sh:message "Replace rdfs:Property with rdf:Property" ;
+        sh:update """
+            DELETE { ?s <http://www.w3.org/2000/01/rdf-schema#Property> ?o }
+            INSERT { ?s <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> ?o }
+            WHERE  { ?s <http://www.w3.org/2000/01/rdf-schema#Property> ?o } ;
+            DELETE { ?s a <http://www.w3.org/2000/01/rdf-schema#Property> }
+            INSERT { ?s a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> }
+            WHERE  { ?s a <http://www.w3.org/2000/01/rdf-schema#Property> }
+        """
+    ] .
+
+linter:RepairDctBibliographiccitation
+    a linter:Repair ;
+    linter:safety linter:Automatic ;
+    linter:repairsRule linter:KnownVocabularyTermShape ;
+    linter:badIri dct:bibliographiccitation ;
+    linter:replacementIri dct:bibliographicCitation ;
+    dash:suggestionGenerator [
+        a dash:SPARQLUpdateSuggestionGenerator ;
+        sh:message "Replace dct:bibliographiccitation with dct:bibliographicCitation" ;
+        sh:update """
+            DELETE { ?s <http://purl.org/dc/terms/bibliographiccitation> ?o }
+            INSERT { ?s <http://purl.org/dc/terms/bibliographicCitation> ?o }
+            WHERE  { ?s <http://purl.org/dc/terms/bibliographiccitation> ?o } ;
+            DELETE { ?s a <http://purl.org/dc/terms/bibliographiccitation> }
+            INSERT { ?s a <http://purl.org/dc/terms/bibliographicCitation> }
+            WHERE  { ?s a <http://purl.org/dc/terms/bibliographiccitation> }
+        """
+    ] .
+
+linter:RepairSkosPreflabel
+    a linter:Repair ;
+    linter:safety linter:Automatic ;
+    linter:repairsRule linter:KnownVocabularyTermShape ;
+    linter:badIri skos:preflabel ;
+    linter:replacementIri skos:prefLabel ;
+    dash:suggestionGenerator [
+        a dash:SPARQLUpdateSuggestionGenerator ;
+        sh:message "Replace skos:preflabel with skos:prefLabel" ;
+        sh:update """
+            DELETE { ?s <http://www.w3.org/2004/02/skos/core#preflabel> ?o }
+            INSERT { ?s <http://www.w3.org/2004/02/skos/core#prefLabel> ?o }
+            WHERE  { ?s <http://www.w3.org/2004/02/skos/core#preflabel> ?o } ;
+            DELETE { ?s a <http://www.w3.org/2004/02/skos/core#preflabel> }
+            INSERT { ?s a <http://www.w3.org/2004/02/skos/core#prefLabel> }
+            WHERE  { ?s a <http://www.w3.org/2004/02/skos/core#preflabel> }
+        """
+    ] .
+
+linter:RepairOwlSame
+    a linter:Repair ;
+    linter:safety linter:Automatic ;
+    linter:repairsRule linter:KnownVocabularyTermShape ;
+    linter:badIri owl:same ;
+    linter:replacementIri owl:sameAs ;
+    dash:suggestionGenerator [
+        a dash:SPARQLUpdateSuggestionGenerator ;
+        sh:message "Replace owl:same with owl:sameAs" ;
+        sh:update """
+            DELETE { ?s <http://www.w3.org/2002/07/owl#same> ?o }
+            INSERT { ?s <http://www.w3.org/2002/07/owl#sameAs> ?o }
+            WHERE  { ?s <http://www.w3.org/2002/07/owl#same> ?o } ;
+            DELETE { ?s a <http://www.w3.org/2002/07/owl#same> }
+            INSERT { ?s a <http://www.w3.org/2002/07/owl#sameAs> }
+            WHERE  { ?s a <http://www.w3.org/2002/07/owl#same> }
+        """
+    ] .

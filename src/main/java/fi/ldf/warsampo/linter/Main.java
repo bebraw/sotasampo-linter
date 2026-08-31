@@ -32,7 +32,7 @@ public final class Main {
             err.println("Error: " + exception.getMessage());
             return 2;
         } catch (Exception exception) {
-            err.println("Validation failed: " + exception.getMessage());
+            err.println("Command failed: " + exception.getMessage());
             exception.printStackTrace(err);
             return 2;
         }
@@ -50,9 +50,11 @@ public final class Main {
         return run.hasRegressions() ? 1 : 0;
     }
 
-    private static int runRepair(String[] args, PrintStream out, PrintStream err) {
-        err.println("Repair support is not implemented yet.");
-        return 2;
+    private static int runRepair(String[] args, PrintStream out, PrintStream err) throws Exception {
+        RepairOptions options = RepairOptions.parse(args);
+        RepairRun run = new RepairService(options).run();
+        run.writeOutputs(options, out);
+        return 0;
     }
 
     private static String[] slice(String[] args) {
@@ -77,6 +79,17 @@ public final class Main {
                   --baseline PATH         Compare findings with a committed baseline
                   --write-baseline PATH   Write the current findings as a baseline
                   --tdb PATH              Reuse an empty caller-owned TDB2 directory
+                  --root PATH             Repository root (default: current directory)
+
+                Repair options:
+                  --profile NAME          Validation guard: core, skos, or warsampo (default: core)
+                  --repair ID             Select a repair by IRI or local ID (repeatable)
+                  --all-automatic         Select all automatic repairs (default)
+                  --dry-run               Print/write a patch without changing data (default)
+                  --apply                 Apply to new copies; requires --output-dir
+                  --output-dir PATH       Empty destination for repaired data copies
+                  --patch PATH            Write the guarded SPARQL Update to a new file
+                  --provenance PATH       Write repair provenance as Turtle to a new file
                   --root PATH             Repository root (default: current directory)
                 """);
     }
