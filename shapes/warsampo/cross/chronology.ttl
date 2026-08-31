@@ -1,0 +1,33 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix wsc: <http://ldf.fi/schema/warsa/> .
+
+linter:BirthDeathChronologyShape
+    a sh:NodeShape ;
+    sh:targetClass wsc:Person ;
+    sh:severity sh:Violation ;
+    sh:message "A person's latest possible birth date is after their earliest possible death date." ;
+    dct:source <https://w3id.org/warsampo-linter/requirements/life-event-chronology> ;
+    linter:layer linter:DomainLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+            PREFIX wsc: <http://ldf.fi/schema/warsa/>
+            SELECT DISTINCT $this (crm:P4_has_time-span AS ?path) ?value ?message
+            WHERE {
+              ?birth a wsc:Birth ;
+                     crm:P98_brought_into_life $this ;
+                     crm:P4_has_time-span ?birthSpan .
+              ?birthSpan crm:P82b_end_of_the_end ?birthEnd .
+              ?death a wsc:Death ;
+                     crm:P100_was_death_of $this ;
+                     crm:P4_has_time-span ?deathSpan .
+              ?deathSpan crm:P82a_begin_of_the_begin ?deathBegin .
+              FILTER(?birthEnd > ?deathBegin)
+              BIND(?death AS ?value)
+              BIND(CONCAT("Birth ends ", STR(?birthEnd), " but death begins ", STR(?deathBegin)) AS ?message)
+            }
+        """ ;
+    ] .

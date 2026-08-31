@@ -1,0 +1,50 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+linter:SkosPreferredLabelLanguageShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf skos:prefLabel ;
+    sh:severity sh:Violation ;
+    sh:message "A resource has more than one SKOS preferred label for the same language." ;
+    dct:source <https://www.w3.org/TR/skos-reference/#L1567> ;
+    linter:layer linter:VocabularyLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT DISTINCT $this (skos:prefLabel AS ?path) ?value ?message
+            WHERE {
+              $this skos:prefLabel ?first, ?value .
+              FILTER(?first != ?value)
+              FILTER(LANG(?first) = LANG(?value))
+              FILTER(STR(?first) < STR(?value))
+              BIND(CONCAT("Duplicate preferred-label language '", LANG(?value), "'") AS ?message)
+            }
+        """ ;
+    ] .
+
+linter:SkosLabelDisjointnessShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf skos:prefLabel ;
+    sh:targetSubjectsOf skos:altLabel ;
+    sh:targetSubjectsOf skos:hiddenLabel ;
+    sh:severity sh:Violation ;
+    sh:message "SKOS preferred, alternative, and hidden labels must be pairwise disjoint." ;
+    dct:source <https://www.w3.org/TR/skos-reference/#L1602> ;
+    linter:layer linter:VocabularyLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT DISTINCT $this ?path ?value ?message
+            WHERE {
+              VALUES ?firstPath { skos:prefLabel skos:altLabel skos:hiddenLabel }
+              VALUES ?path { skos:prefLabel skos:altLabel skos:hiddenLabel }
+              $this ?firstPath ?value ; ?path ?value .
+              FILTER(STR(?firstPath) < STR(?path))
+              BIND(CONCAT("Label is used by both ", STR(?firstPath), " and ", STR(?path)) AS ?message)
+            }
+        """ ;
+    ] .

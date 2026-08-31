@@ -79,6 +79,59 @@ class ValidationServiceTest {
         assertFalse(run.hasRegressions());
     }
 
+    @Test
+    void skosProfileAcceptsValidFixtureAndFindsIntegrityViolations() throws Exception {
+        ValidationRun valid = validate("fixtures/positive/skos-valid.ttl", Profile.SKOS, false, null, null, null);
+        ValidationRun invalid = validate("fixtures/negative/skos-invalid.ttl", Profile.SKOS, false, null, null, null);
+
+        assertTrue(valid.findings().isEmpty());
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("SkosPreferredLabelLanguageShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("SkosLabelDisjointnessShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("SkosBroaderSelfShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("SkosBroaderCycleShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("SkosRelatedSelfShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("SkosBroaderRelatedDisjointShape")));
+    }
+
+    @Test
+    void warsampoLocalProfileEnforcesEventRoles() throws Exception {
+        ValidationRun valid = validate(
+                "fixtures/positive/warsampo-local-valid.ttl", Profile.WARSAMPO, false, null, null, null);
+        ValidationRun invalid = validate(
+                "fixtures/negative/warsampo-local-invalid.ttl", Profile.WARSAMPO, false, null, null, null);
+
+        assertTrue(valid.findings().isEmpty());
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("BirthPersonPropertyShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("DeathPersonPropertyShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("EventTimeSpanPropertyShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("UnitJoiningNodeShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("MedalAwardingMedalPropertyShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("MedalAwardingRecipientPropertyShape")));
+    }
+
+    @Test
+    void warsampoCrossProfileFindsChronologyAndReferenceErrors(@TempDir Path temporaryDirectory) throws Exception {
+        ValidationRun valid = validate(
+                "fixtures/positive/warsampo-cross-valid.ttl",
+                Profile.WARSAMPO,
+                true,
+                null,
+                null,
+                temporaryDirectory.resolve("valid-tdb"));
+        ValidationRun invalid = validate(
+                "fixtures/negative/warsampo-cross-invalid.ttl",
+                Profile.WARSAMPO,
+                true,
+                null,
+                null,
+                temporaryDirectory.resolve("invalid-tdb"));
+
+        assertTrue(valid.findings().isEmpty());
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("BirthDeathChronologyShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("InternalReferenceShape")));
+        assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("EventParticipantTypeShape")));
+    }
+
     private ValidationRun validate(String data, boolean crossModule, Path baseline, Path writeBaseline)
             throws Exception {
         return validate(data, crossModule, baseline, writeBaseline, null);
@@ -91,10 +144,21 @@ class ValidationServiceTest {
             Path writeBaseline,
             Path tdb)
             throws Exception {
+        return validate(data, Profile.CORE, crossModule, baseline, writeBaseline, tdb);
+    }
+
+    private ValidationRun validate(
+            String data,
+            Profile profile,
+            boolean crossModule,
+            Path baseline,
+            Path writeBaseline,
+            Path tdb)
+            throws Exception {
         ValidationOptions options = new ValidationOptions(
                 root,
                 List.of(root.resolve(data)),
-                Profile.CORE,
+                profile,
                 crossModule,
                 null,
                 null,

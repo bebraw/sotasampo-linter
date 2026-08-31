@@ -4,7 +4,12 @@ set -eu
 project_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 jar_path="$project_root/target/warsampo-linter.jar"
 
-if [ ! -f "$jar_path" ]; then
+if [ ! -f "$jar_path" ] || find \
+  "$project_root/pom.xml" \
+  "$project_root/src" \
+  "$project_root/shapes" \
+  "$project_root/vocabularies" \
+  -type f -newer "$jar_path" -print -quit | grep -q .; then
   "$project_root/scripts/mvn.sh" package
 fi
 

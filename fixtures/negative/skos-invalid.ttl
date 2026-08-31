@@ -1,0 +1,23 @@
+@prefix ex: <https://example.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ex:duplicateLabels
+    a skos:Concept ;
+    skos:prefLabel "First"@en , "Second"@en ;
+    skos:altLabel "First"@en .
+
+ex:selfBroader
+    a skos:Concept ;
+    skos:broader ex:selfBroader .
+
+ex:selfRelated
+    a skos:Concept ;
+    skos:related ex:selfRelated .
+
+ex:child
+    a skos:Concept ;
+    skos:broader ex:parent ;
+    skos:related ex:parent .
+
+ex:cycleA skos:broader ex:cycleB .
+ex:cycleB skos:broader ex:cycleA .

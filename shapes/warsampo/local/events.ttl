@@ -1,0 +1,116 @@
+@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix wsc: <http://ldf.fi/schema/warsa/> .
+
+linter:BirthPersonNodeShape
+    a sh:NodeShape ;
+    sh:targetClass wsc:Birth ;
+    sh:property linter:BirthPersonPropertyShape ;
+    dct:source <https://w3id.org/warsampo-linter/requirements/birth-person> ;
+    linter:layer linter:DomainLayer .
+
+linter:BirthPersonPropertyShape
+    a sh:PropertyShape ;
+    sh:path crm:P98_brought_into_life ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Violation ;
+    sh:message "A WarSampo birth event must identify exactly one person brought into life." .
+
+linter:DeathPersonNodeShape
+    a sh:NodeShape ;
+    sh:targetClass wsc:Death ;
+    sh:property linter:DeathPersonPropertyShape ;
+    dct:source <https://w3id.org/warsampo-linter/requirements/death-person> ;
+    linter:layer linter:DomainLayer .
+
+linter:DeathPersonPropertyShape
+    a sh:PropertyShape ;
+    sh:path crm:P100_was_death_of ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Violation ;
+    sh:message "A WarSampo death event must identify exactly one deceased person." .
+
+linter:EventTimeSpanNodeShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf crm:P4_has_time-span ;
+    sh:property linter:EventTimeSpanPropertyShape ;
+    dct:source <https://w3id.org/warsampo-linter/requirements/event-time-span> ;
+    linter:layer linter:StructuralLayer .
+
+linter:EventTimeSpanPropertyShape
+    a sh:PropertyShape ;
+    sh:path crm:P4_has_time-span ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Violation ;
+    sh:message "A WarSampo event must not have more than one time-span resource." .
+
+linter:UnitJoiningNodeShape
+    a sh:NodeShape ;
+    sh:targetClass wsc:UnitJoining ;
+    sh:property linter:UnitJoiningChildPropertyShape ;
+    sh:property linter:UnitJoiningParentPropertyShape ;
+    sh:severity sh:Violation ;
+    dct:source <https://w3id.org/warsampo-linter/requirements/unit-joining> ;
+    linter:layer linter:DomainLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:message "A military unit cannot join itself." ;
+        sh:select """
+            PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
+            SELECT $this (crm:P144_joined_with AS ?path) ?value
+            WHERE {
+              $this crm:P143_joined ?value ; crm:P144_joined_with ?value .
+            }
+        """ ;
+    ] .
+
+linter:UnitJoiningChildPropertyShape
+    a sh:PropertyShape ;
+    sh:path crm:P143_joined ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Violation ;
+    sh:message "A unit-joining event must identify exactly one joining unit." .
+
+linter:UnitJoiningParentPropertyShape
+    a sh:PropertyShape ;
+    sh:path crm:P144_joined_with ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Violation ;
+    sh:message "A unit-joining event must identify exactly one receiving unit." .
+
+linter:MedalAwardingNodeShape
+    a sh:NodeShape ;
+    sh:targetClass wsc:MedalAwarding ;
+    sh:property linter:MedalAwardingMedalPropertyShape ;
+    sh:property linter:MedalAwardingRecipientPropertyShape ;
+    dct:source <https://w3id.org/warsampo-linter/requirements/medal-awarding> ;
+    linter:layer linter:DomainLayer .
+
+linter:MedalAwardingMedalPropertyShape
+    a sh:PropertyShape ;
+    sh:path crm:P141_assigned ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Violation ;
+    sh:message "A medal-awarding event must assign exactly one medal." .
+
+linter:MedalAwardingRecipientPropertyShape
+    a sh:PropertyShape ;
+    sh:path crm:P11_had_participant ;
+    sh:minCount 1 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:severity sh:Violation ;
+    sh:message "A medal-awarding event must identify exactly one recipient." .

@@ -21,26 +21,25 @@ linter:KnownVocabularyTermShape
             SELECT DISTINCT $this ?path ?value ?message
             WHERE {
               {
-                ?subject ?predicate ?object .
-                BIND(?predicate AS ?path)
-                BIND(?predicate AS ?value)
+                ?subject ?term ?value .
+                BIND(?term AS ?path)
               }
               UNION
               {
-                ?subject rdf:type ?class .
-                BIND(rdf:type AS ?path)
-                BIND(?class AS ?value)
+                ?subject rdf:type ?term .
+                BIND(?term AS ?path)
+                BIND(?subject AS ?value)
               }
-              FILTER(isIRI(?value))
+              FILTER(isIRI(?term))
               FILTER(
-                STRSTARTS(STR(?value), "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ||
-                STRSTARTS(STR(?value), "http://www.w3.org/2000/01/rdf-schema#") ||
-                STRSTARTS(STR(?value), "http://www.w3.org/2002/07/owl#") ||
-                STRSTARTS(STR(?value), "http://www.w3.org/2004/02/skos/core#") ||
-                STRSTARTS(STR(?value), "http://purl.org/dc/terms/")
+                STRSTARTS(STR(?term), "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ||
+                STRSTARTS(STR(?term), "http://www.w3.org/2000/01/rdf-schema#") ||
+                STRSTARTS(STR(?term), "http://www.w3.org/2002/07/owl#") ||
+                STRSTARTS(STR(?term), "http://www.w3.org/2004/02/skos/core#") ||
+                STRSTARTS(STR(?term), "http://purl.org/dc/terms/")
               )
-              FILTER NOT EXISTS { ?value linter:knownTerm true }
-              BIND(CONCAT("Unknown standard vocabulary term ", STR(?value), " used by ", STR(?subject)) AS ?message)
+              FILTER NOT EXISTS { ?term linter:knownTerm true }
+              BIND(CONCAT("Unknown standard vocabulary term ", STR(?term), " used by ", STR(?subject)) AS ?message)
             }
         """ ;
     ] .

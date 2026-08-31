@@ -1,0 +1,17 @@
+@prefix ex: <https://example.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+ex:root
+    a skos:Concept ;
+    skos:prefLabel "Root"@en .
+
+ex:child
+    a skos:Concept ;
+    skos:prefLabel "Child"@en , "Lapsi"@fi ;
+    skos:altLabel "Descendant"@en ;
+    skos:broader ex:root ;
+    skos:related ex:peer .
+
+ex:peer
+    a skos:Concept ;
+    skos:prefLabel "Peer"@en .

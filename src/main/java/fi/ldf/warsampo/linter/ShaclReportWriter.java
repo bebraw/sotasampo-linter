@@ -5,8 +5,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.TreeSet;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.riot.out.NodeFmtLib;
 
@@ -41,10 +41,9 @@ final class ShaclReportWriter {
             triples.add(triple(result, iri(LINTER + "signature"), literal(finding.signature())));
         }
 
-        triples.sort(Comparator.naturalOrder());
         List<String> lines = new ArrayList<>();
         lines.add("# Deterministic N-Triples subset of Turtle");
-        lines.addAll(triples);
+        lines.addAll(new TreeSet<>(triples));
         Files.write(path, lines, StandardCharsets.UTF_8);
     }
 

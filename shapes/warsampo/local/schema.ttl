@@ -1,0 +1,26 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix wacs: <http://ldf.fi/schema/warsa/actors/> .
+
+linter:ConflictClassNamespaceShape
+    a sh:NodeShape ;
+    sh:targetNode wacs:hasConflict ;
+    sh:severity sh:Warning ;
+    sh:message "WarSampo defines a local Conflict class but hasConflict ranges over the conflicts vocabulary class; confirm the intended namespace." ;
+    dct:source <https://w3id.org/warsampo-linter/requirements/conflict-class> ;
+    linter:layer linter:DomainLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX wcf: <http://ldf.fi/warsa/conflicts/>
+            PREFIX wsc: <http://ldf.fi/schema/warsa/>
+            SELECT $this (rdfs:range AS ?path) (wcf:Conflict AS ?value)
+            WHERE {
+              $this rdfs:range wcf:Conflict .
+              wsc:Conflict a rdfs:Class .
+            }
+        """ ;
+    ] .

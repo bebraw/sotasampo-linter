@@ -1,0 +1,74 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+linter:SkosBroaderSelfShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf skos:broader ;
+    sh:severity sh:Violation ;
+    sh:message "A SKOS concept cannot be broader than itself." ;
+    dct:source <https://www.w3.org/TR/skos-reference/#semantic-relations> ;
+    linter:layer linter:VocabularyLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT $this (skos:broader AS ?path) ($this AS ?value)
+            WHERE { $this skos:broader $this }
+        """ ;
+    ] .
+
+linter:SkosBroaderCycleShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf skos:broader ;
+    sh:severity sh:Warning ;
+    sh:message "The SKOS broader hierarchy contains a cycle." ;
+    dct:source <https://www.w3.org/TR/skos-reference/#semantic-relations> ;
+    linter:layer linter:VocabularyLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT $this (skos:broader AS ?path) ($this AS ?value)
+            WHERE { $this skos:broader+ $this }
+        """ ;
+    ] .
+
+linter:SkosRelatedSelfShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf skos:related ;
+    sh:severity sh:Violation ;
+    sh:message "A SKOS concept cannot be related to itself." ;
+    dct:source <https://www.w3.org/TR/skos-reference/#semantic-relations> ;
+    linter:layer linter:VocabularyLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT $this (skos:related AS ?path) ($this AS ?value)
+            WHERE { $this skos:related $this }
+        """ ;
+    ] .
+
+linter:SkosBroaderRelatedDisjointShape
+    a sh:NodeShape ;
+    sh:targetSubjectsOf skos:broader ;
+    sh:targetSubjectsOf skos:related ;
+    sh:severity sh:Violation ;
+    sh:message "A concept pair cannot be both hierarchically and associatively related." ;
+    dct:source <https://www.w3.org/TR/skos-reference/#L2422> ;
+    linter:layer linter:VocabularyLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+            SELECT DISTINCT $this (skos:related AS ?path) ?value
+            WHERE {
+              $this skos:related ?value .
+              { $this skos:broader+ ?value }
+              UNION
+              { ?value skos:broader+ $this }
+            }
+        """ ;
+    ] .

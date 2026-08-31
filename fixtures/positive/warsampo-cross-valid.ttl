@@ -1,0 +1,28 @@
+@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix wac: <http://ldf.fi/warsa/actors/> .
+@prefix wev: <http://ldf.fi/warsa/events/> .
+@prefix wsc: <http://ldf.fi/schema/warsa/> .
+@prefix wti: <http://ldf.fi/warsa/events/times/> .
+
+wac:testPerson a wsc:Person .
+
+wev:testBirth
+    a wsc:Birth ;
+    crm:P98_brought_into_life wac:testPerson ;
+    crm:P4_has_time-span wti:testBirthSpan .
+
+wti:testBirthSpan
+    crm:P82a_begin_of_the_begin "1900-01-01"^^xsd:date ;
+    crm:P82b_end_of_the_end "1900-12-31"^^xsd:date .
+
+wev:testDeath
+    a wsc:Death ;
+    crm:P100_was_death_of wac:testPerson ;
+    crm:P4_has_time-span wti:testDeathSpan .
+
+wti:testDeathSpan
+    crm:P82a_begin_of_the_begin "1980-01-01"^^xsd:date ;
+    crm:P82b_end_of_the_end "1980-12-31"^^xsd:date .
+
+wev:testEvent crm:P11_had_participant wac:testPerson .

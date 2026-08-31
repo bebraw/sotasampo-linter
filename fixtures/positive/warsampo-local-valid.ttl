@@ -1,0 +1,23 @@
+@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix ex: <https://example.org/> .
+@prefix wsc: <http://ldf.fi/schema/warsa/> .
+
+ex:birth
+    a wsc:Birth ;
+    crm:P98_brought_into_life ex:person ;
+    crm:P4_has_time-span ex:birthSpan .
+
+ex:death
+    a wsc:Death ;
+    crm:P100_was_death_of ex:person ;
+    crm:P4_has_time-span ex:deathSpan .
+
+ex:joining
+    a wsc:UnitJoining ;
+    crm:P143_joined ex:childUnit ;
+    crm:P144_joined_with ex:parentUnit .
+
+ex:award
+    a wsc:MedalAwarding ;
+    crm:P141_assigned ex:medal ;
+    crm:P11_had_participant ex:person .
