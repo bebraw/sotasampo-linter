@@ -1,6 +1,6 @@
 # ADR-001: Adopt SHACL for Linked-Data Linting and Guarded Repair
 
-**Status:** Proposed
+**Status:** Implemented
 
 **Date:** 2026-08-31
 
@@ -196,6 +196,22 @@ The implementation is complete when:
 6. **Extraction:** move rules proven useful outside WarSampo into versioned core or vocabulary profiles without weakening their fixtures.
 
 Aggregate quality metrics may later be published with the [Data Quality Vocabulary](https://www.w3.org/TR/vocab-dqv/), but dashboards and dataset scoring are outside this first slice.
+
+## Implementation
+
+Implemented on 2026-08-31 with Apache Jena 6.2.0 and Java 21. The repository now contains:
+
+- strict parsing, cumulative `core`, `skos`, and `warsampo` local profiles, plus explicitly integration-scoped union rules;
+- deterministic SHACL reports, stable regression signatures, baseline comparison, rule counts, elapsed time, and peak-heap reporting;
+- 17 local rules and four additional cross-module rules, covered by positive/negative fixtures;
+- a checksum-pinned, role-aware standard-vocabulary manifest generated from official RDF graphs;
+- pySHACL compatibility coverage for the Core profile;
+- five declarative DASH/SPARQL Update repairs with dry-run output, copy-only application, provenance, postconditions, revalidation, and idempotence tests; and
+- GitHub Actions coverage for the Java and pySHACL fixture suites.
+
+The completed full module-local WarSampo run parsed 60 of 61 sources and 13,733,789 triples in 112,383 ms, with a peak JVM heap of 2,294.0 MiB. It reported 233 violations and one warning. The remaining source failed strict parsing because `1939-12-35` is not a valid `xsd:date`. The reviewed signatures are committed in `baselines/warsampo-local.tsv`; details are recorded in [the baseline record](../../baselines/2026-08-31-warsampo.md).
+
+Cross-module execution is implemented using TDB2 and is verified on fixtures. A full-corpus union audit remained CPU-bound beyond 20 minutes and was stopped without committing a partial baseline. It is therefore an explicit audit path rather than a routine CI gate, and query-specific ARQ profiling is follow-up work. This limitation does not affect completion of the required full module-local baseline.
 
 ## Trigger
 

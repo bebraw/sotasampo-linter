@@ -1,61 +1,121 @@
 # warsampo-linter
 
-`warsampo-linter` explores reusable ways to detect and safely repair errors in RDF linked data. The [WarSampo datasets](https://www.ldf.fi/dataset/warsa) are the first case study, but the rule system is intended to support other datasets as well.
+`warsampo-linter` detects and safely repairs errors in RDF linked data. WarSampo is the first case study, while the rule library separates reusable RDF/SKOS checks from dataset-specific constraints so the same approach can be used with other datasets.
 
-The project is currently in the research and specification stage. The proposed architecture is recorded in [ADR-001](./docs/adrs/proposed/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md); it is not yet implemented or accepted.
+The implemented architecture is recorded in [ADR-001](./docs/adrs/implemented/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md). It uses SHACL as the rule language, Apache Jena 6.2.0 as the primary engine, pySHACL as a compatibility engine, TDB2 for union graphs, and guarded SPARQL Update for repairs.
 
-## Goals
+## Quick start
 
-- Detect errors ranging from malformed RDF to project-specific semantic inconsistencies.
-- Express rules with established linked-data standards and tools instead of creating a custom rule language.
-- Separate broadly reusable rules from vocabulary profiles and dataset-specific rules.
-- Suggest or apply repairs only when their safety can be demonstrated and tested.
-- Support incremental adoption on large datasets that already contain known violations.
+Docker is the only local prerequisite. The wrapper builds the Java 21 application when needed and runs it with a 4 GiB heap cap.
 
-## Proposed approach
+```sh
+./scripts/linter.sh validate \
+  --data fixtures/positive/core-valid.ttl \
+  --profile core
+```
 
-- Use [SHACL](https://www.w3.org/TR/shacl/) as the canonical constraint language, preferring SHACL Core and using SHACL-SPARQL when necessary.
-- Use [Apache Jena](https://jena.apache.org/documentation/shacl/) for strict RDF parsing, primary validation, SPARQL, and disk-backed cross-module checks.
-- Use [pySHACL](https://github.com/RDFLib/pyshacl) on small fixtures as a secondary implementation and interoperability check.
-- Keep validation and repair separate. Represent reviewable repairs as guarded SPARQL Updates, optionally using the [DASH Suggestions Vocabulary](https://www.datashapes.org/suggestions.html).
-- Run most rules per file or module and reserve a disk-backed union graph for checks that genuinely require the complete dataset.
+Validation exits with `0` when there are no new violations, `1` for new violations, and `2` for malformed input, invalid options, or execution failures. Warnings alone do not fail the run.
 
-Rules are divided into layers:
+The profiles are cumulative:
 
-1. RDF serialization and parsing.
-2. Generic RDF and known-vocabulary hygiene.
-3. Reusable profiles for vocabularies such as SKOS, CIDOC CRM, and GeoSPARQL.
-4. Structural dataset contracts.
-5. Cross-resource and cross-module consistency.
-6. WarSampo-specific historical and domain semantics.
+| Profile | Local rules | Scope |
+| --- | ---: | --- |
+| `core` | 2 | strict parsing, standard-vocabulary term and role validation, datatype hygiene |
+| `skos` | 8 | Core plus SKOS label and relation integrity |
+| `warsampo` | 17 | SKOS plus WarSampo event, role, schema, and domain rules |
 
-## Repair policy
+With `--cross-module`, local rules still run once per source module and four explicitly integration-scoped rules run over a disk-backed union. The full WarSampo union audit is intentionally opt-in; see [the baseline record](./docs/baselines/2026-08-31-warsampo.md) for its current performance limitation.
 
-Repairs have three safety levels:
+## Reports and baselines
 
-- **Automatic:** deterministic, unambiguous, idempotent, local, and reversible corrections, such as an exact replacement for a misspelled standard vocabulary term.
-- **Suggested:** a patch is generated for review but not applied automatically.
-- **Manual:** ambiguous semantic changes are reported with context only.
+The validator can emit a deterministic Turtle report, a text summary, and stable regression signatures:
 
-Fix operations will default to dry-run output, operate on a copy or generated patch, preserve provenance, revalidate the result, and present a diff before source data is replaced.
+```sh
+./scripts/linter.sh validate \
+  --data warsampo \
+  --profile warsampo \
+  --report reports/warsampo-local-report.ttl \
+  --summary reports/warsampo-local-summary.txt \
+  --baseline baselines/warsampo-local.tsv
+```
 
-## Initial WarSampo findings
+To review a new baseline, replace `--baseline` with `--write-baseline`. A signature includes the rule, focus node, path, value, source module, and message. The committed baseline accepts existing violations but never suppresses parsing failures or validator crashes.
 
-The research scan found 15 high-confidence standard-vocabulary misspellings that valid RDF syntax alone cannot detect:
+The current corpus contains one invalid `xsd:date` (`1939-12-35` in `warsampo/warsa-event-data/times.ttl`), so a complete corpus command exits with `2` even when every SHACL violation is baselined. This is an intentional distinction between accepted graph findings and input that cannot be parsed strictly.
 
-| Observed | Expected | Occurrences |
-| -------- | -------- | ----------: |
+## Guarded repairs
+
+Repair is a separate command and defaults to dry run. The initial catalog contains five exact standard-term substitutions represented as DASH SPARQL Update suggestion generators:
+
+```sh
+./scripts/linter.sh repair \
+  --data warsampo/ammo-data/ammo_schema.ttl \
+  --data warsampo/ammo-data/sources.ttl \
+  --data warsampo/warsa-actor-data/medals/medal_types.ttl \
+  --profile core \
+  --dry-run \
+  --patch reports/standard-term-repairs.ru \
+  --provenance reports/standard-term-repairs.ttl
+```
+
+The five mappings are:
+
+| Observed | Replacement | Corpus occurrences |
+| --- | --- | ---: |
 | `rdfs:subClassof` | `rdfs:subClassOf` | 2 |
 | `rdfs:Property` | `rdf:Property` | 7 |
 | `dct:bibliographiccitation` | `dct:bibliographicCitation` | 2 |
 | `skos:preflabel` | `skos:prefLabel` | 3 |
 | `owl:same` | `owl:sameAs` | 1 |
 
-An additional schema mismatch between the local `:Conflict` class and `wcf:Conflict` is intentionally classified as a warning requiring human review. It illustrates why some findings must not be repaired automatically.
+Applying a repair always requires a new, empty destination. Source data is never overwritten:
 
-At the time of the scan, the local WarSampo checkout was approximately 679 MB and contained about 15.5 million lines of Turtle. These figures motivate modular validation and should be treated as a snapshot rather than a permanent dataset property.
+```sh
+./scripts/linter.sh repair \
+  --data fixtures/repairs/standard-term-typos.ttl \
+  --profile core \
+  --apply \
+  --output-dir reports/repaired
+```
+
+An apply run records the repair ID, rule ID, source module, timestamp, and exact deleted/added RDF statements. It rejects updates without a corresponding validation finding, failed postconditions, or new violations, and a second run must be a no-op. Changed RDF copies are serialized by Jena, so review the generated triple patch rather than expecting a formatting-only source diff.
+
+## Rule layout
+
+```text
+shapes/
+  core/                 reusable local RDF checks
+  vocabularies/skos/    reusable SKOS checks
+  integration/          generic union-graph checks
+  warsampo/local/       WarSampo module checks
+  warsampo/cross/       WarSampo union-graph checks
+repairs/core/           declarative automatic repair catalog
+fixtures/               positive, negative, and repair fixtures
+vocabularies/           generated, role-aware standard-term manifest
+baselines/              reviewed regression signatures
+```
+
+Every executable constraint has a stable IRI, explicit severity, message, layer, source justification, and fixture coverage. Prefer SHACL Core; use SHACL-SPARQL when the constraint is not clear in Core. Add rules to a reusable layer only when their meaning does not depend on WarSampo.
+
+The vocabulary manifest is generated from checksum-pinned official RDF, RDFS, OWL, SKOS, and DCMI graphs:
+
+```sh
+./scripts/update-vocabularies.sh
+./scripts/update-vocabularies.sh --check
+```
+
+## Verification
+
+```sh
+./scripts/mvn.sh test
+./scripts/test-pyshacl.sh
+docker build -t warsampo-linter .
+```
+
+GitHub Actions runs the Java fixture/repair suite and the pySHACL compatibility check. The ignored WarSampo checkout is not required in CI. Full-corpus measurements and the reviewed finding breakdown are recorded in [docs/baselines/2026-08-31-warsampo.md](./docs/baselines/2026-08-31-warsampo.md).
 
 ## Project documentation
 
 - [ADR index](./docs/adrs/README.md)
-- [ADR-001: Adopt SHACL for Linked-Data Linting and Guarded Repair](./docs/adrs/proposed/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md)
+- [ADR-001: Adopt SHACL for Linked-Data Linting and Guarded Repair](./docs/adrs/implemented/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md)
+- [WarSampo baseline record, 2026-08-31](./docs/baselines/2026-08-31-warsampo.md)

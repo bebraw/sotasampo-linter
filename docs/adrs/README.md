@@ -10,9 +10,7 @@ ADRs are grouped by lifecycle status:
 
 ## Proposed ADRs
 
-| ADR                                                                                                         | Status   | Summary                                                                                     |
-| ----------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------- |
-| [ADR-001](./proposed/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md) | Proposed | Use SHACL, Apache Jena, and guarded SPARQL Update repairs for reusable linked-data linting. |
+No ADRs are currently proposed.
 
 ## Accepted ADRs
 
@@ -20,7 +18,9 @@ No accepted ADRs are currently pending implementation.
 
 ## Implemented ADRs
 
-No ADRs have been implemented yet.
+| ADR | Status | Summary |
+| --- | --- | --- |
+| [ADR-001](./implemented/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md) | Implemented | Use SHACL, Apache Jena, and guarded SPARQL Update repairs for reusable linked-data linting. |
 
 ## Lifecycle
 
