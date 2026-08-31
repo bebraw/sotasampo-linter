@@ -1,0 +1,128 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+linter:standardVocabularyManifest
+    a linter:VocabularyManifest ;
+    dct:modified "2026-08-31" ;
+    dct:source
+        <https://www.dublincore.org/specifications/dublin-core/dcmi-terms/> ,
+        <https://www.w3.org/TR/owl2-syntax/> ,
+        <https://www.w3.org/TR/rdf11-concepts/> ,
+        <https://www.w3.org/TR/rdf-schema/> ,
+        <https://www.w3.org/TR/skos-reference/> .
+
+# RDF 1.1 terms used by the supported profiles.
+rdf:type linter:knownTerm true .
+rdf:Property linter:knownTerm true .
+rdf:Statement linter:knownTerm true .
+rdf:subject linter:knownTerm true .
+rdf:predicate linter:knownTerm true .
+rdf:object linter:knownTerm true .
+rdf:value linter:knownTerm true .
+rdf:List linter:knownTerm true .
+rdf:first linter:knownTerm true .
+rdf:rest linter:knownTerm true .
+rdf:nil linter:knownTerm true .
+rdf:langString linter:knownTerm true .
+rdf:XMLLiteral linter:knownTerm true .
+rdf:HTML linter:knownTerm true .
+
+# RDF Schema 1.1 terms used by the supported profiles.
+rdfs:Resource linter:knownTerm true .
+rdfs:Class linter:knownTerm true .
+rdfs:Literal linter:knownTerm true .
+rdfs:Datatype linter:knownTerm true .
+rdfs:Container linter:knownTerm true .
+rdfs:ContainerMembershipProperty linter:knownTerm true .
+rdfs:subClassOf linter:knownTerm true .
+rdfs:subPropertyOf linter:knownTerm true .
+rdfs:domain linter:knownTerm true .
+rdfs:range linter:knownTerm true .
+rdfs:label linter:knownTerm true .
+rdfs:comment linter:knownTerm true .
+rdfs:member linter:knownTerm true .
+rdfs:seeAlso linter:knownTerm true .
+rdfs:isDefinedBy linter:knownTerm true .
+
+# OWL 2 terms used by the supported profiles.
+owl:Ontology linter:knownTerm true .
+owl:Class linter:knownTerm true .
+owl:ObjectProperty linter:knownTerm true .
+owl:DatatypeProperty linter:knownTerm true .
+owl:AnnotationProperty linter:knownTerm true .
+owl:NamedIndividual linter:knownTerm true .
+owl:Restriction linter:knownTerm true .
+owl:sameAs linter:knownTerm true .
+owl:differentFrom linter:knownTerm true .
+owl:equivalentClass linter:knownTerm true .
+owl:equivalentProperty linter:knownTerm true .
+owl:inverseOf linter:knownTerm true .
+owl:imports linter:knownTerm true .
+owl:versionInfo linter:knownTerm true .
+owl:deprecated linter:knownTerm true .
+
+# SKOS terms from the SKOS Recommendation.
+skos:Concept linter:knownTerm true .
+skos:ConceptScheme linter:knownTerm true .
+skos:Collection linter:knownTerm true .
+skos:OrderedCollection linter:knownTerm true .
+skos:prefLabel linter:knownTerm true .
+skos:altLabel linter:knownTerm true .
+skos:hiddenLabel linter:knownTerm true .
+skos:notation linter:knownTerm true .
+skos:note linter:knownTerm true .
+skos:changeNote linter:knownTerm true .
+skos:definition linter:knownTerm true .
+skos:editorialNote linter:knownTerm true .
+skos:example linter:knownTerm true .
+skos:historyNote linter:knownTerm true .
+skos:scopeNote linter:knownTerm true .
+skos:broader linter:knownTerm true .
+skos:narrower linter:knownTerm true .
+skos:related linter:knownTerm true .
+skos:broaderTransitive linter:knownTerm true .
+skos:narrowerTransitive linter:knownTerm true .
+skos:semanticRelation linter:knownTerm true .
+skos:inScheme linter:knownTerm true .
+skos:hasTopConcept linter:knownTerm true .
+skos:topConceptOf linter:knownTerm true .
+skos:mappingRelation linter:knownTerm true .
+skos:broadMatch linter:knownTerm true .
+skos:narrowMatch linter:knownTerm true .
+skos:relatedMatch linter:knownTerm true .
+skos:closeMatch linter:knownTerm true .
+skos:exactMatch linter:knownTerm true .
+skos:member linter:knownTerm true .
+skos:memberList linter:knownTerm true .
+
+# DCMI Metadata Terms used by the supported profiles.
+dct:BibliographicResource linter:knownTerm true .
+dct:title linter:knownTerm true .
+dct:creator linter:knownTerm true .
+dct:subject linter:knownTerm true .
+dct:description linter:knownTerm true .
+dct:publisher linter:knownTerm true .
+dct:contributor linter:knownTerm true .
+dct:date linter:knownTerm true .
+dct:type linter:knownTerm true .
+dct:format linter:knownTerm true .
+dct:identifier linter:knownTerm true .
+dct:source linter:knownTerm true .
+dct:language linter:knownTerm true .
+dct:relation linter:knownTerm true .
+dct:coverage linter:knownTerm true .
+dct:rights linter:knownTerm true .
+dct:created linter:knownTerm true .
+dct:modified linter:knownTerm true .
+dct:issued linter:knownTerm true .
+dct:license linter:knownTerm true .
+dct:rightsHolder linter:knownTerm true .
+dct:hasFormat linter:knownTerm true .
+dct:isFormatOf linter:knownTerm true .
+dct:hasPart linter:knownTerm true .
+dct:isPartOf linter:knownTerm true .
+dct:bibliographicCitation linter:knownTerm true .

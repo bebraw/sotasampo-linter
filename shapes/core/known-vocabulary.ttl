@@ -1,0 +1,46 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+linter:KnownVocabularyTermShape
+    a sh:NodeShape ;
+    sh:targetNode linter:auditTarget ;
+    sh:severity sh:Violation ;
+    sh:message "An RDF term in a configured standard namespace is not present in the pinned vocabulary manifest." ;
+    dct:source
+        <https://www.dublincore.org/specifications/dublin-core/dcmi-terms/> ,
+        <https://www.w3.org/TR/owl2-syntax/> ,
+        <https://www.w3.org/TR/rdf-schema/> ,
+        <https://www.w3.org/TR/skos-reference/> ;
+    linter:layer linter:CoreLayer ;
+    sh:sparql [
+        a sh:SPARQLConstraint ;
+        sh:select """
+            PREFIX linter: <https://w3id.org/warsampo-linter#>
+            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+            SELECT DISTINCT $this ?path ?value ?message
+            WHERE {
+              {
+                ?subject ?predicate ?object .
+                BIND(?predicate AS ?path)
+                BIND(?predicate AS ?value)
+              }
+              UNION
+              {
+                ?subject rdf:type ?class .
+                BIND(rdf:type AS ?path)
+                BIND(?class AS ?value)
+              }
+              FILTER(isIRI(?value))
+              FILTER(
+                STRSTARTS(STR(?value), "http://www.w3.org/1999/02/22-rdf-syntax-ns#") ||
+                STRSTARTS(STR(?value), "http://www.w3.org/2000/01/rdf-schema#") ||
+                STRSTARTS(STR(?value), "http://www.w3.org/2002/07/owl#") ||
+                STRSTARTS(STR(?value), "http://www.w3.org/2004/02/skos/core#") ||
+                STRSTARTS(STR(?value), "http://purl.org/dc/terms/")
+              )
+              FILTER NOT EXISTS { ?value linter:knownTerm true }
+              BIND(CONCAT("Unknown standard vocabulary term ", STR(?value), " used by ", STR(?subject)) AS ?message)
+            }
+        """ ;
+    ] .

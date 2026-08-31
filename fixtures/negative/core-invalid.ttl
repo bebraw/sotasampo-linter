@@ -1,0 +1,8 @@
+@prefix ex: <https://example.org/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:concept
+    a skos:Concept ;
+    ex:date "2024-01-31"^^xsd:date ;
+    skos:preflabel "Misspelled predicate"@en .

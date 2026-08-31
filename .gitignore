@@ -1,1 +1,4 @@
-warsampo
+/warsampo/
+.venv/
+reports/
+target/
