@@ -24,7 +24,8 @@ final class RdfFiles {
             }
             try (var stream = Files.walk(input)) {
                 stream.filter(Files::isRegularFile)
-                        .filter(RdfFiles::isRdf)
+                        .filter(RdfFiles::isRecognizedRdf)
+                        .peek(RdfFiles::requireRdf)
                         .map(path -> path.toAbsolutePath().normalize())
                         .forEach(files::add);
             }
@@ -46,12 +47,22 @@ final class RdfFiles {
     }
 
     static boolean isRdf(Path path) {
-        return RDFLanguages.filenameToLang(path.getFileName().toString()) != null;
+        var language = RDFLanguages.filenameToLang(path.getFileName().toString());
+        return language != null && RDFLanguages.isTriples(language);
     }
 
     private static void requireRdf(Path path) {
-        if (!isRdf(path)) {
+        var language = RDFLanguages.filenameToLang(path.getFileName().toString());
+        if (language == null) {
             throw new IllegalArgumentException("Unsupported RDF filename: " + path);
         }
+        if (!RDFLanguages.isTriples(language)) {
+            throw new IllegalArgumentException(
+                    "RDF dataset syntax is not supported; use a triple syntax or define named-graph semantics: " + path);
+        }
+    }
+
+    private static boolean isRecognizedRdf(Path path) {
+        return RDFLanguages.filenameToLang(path.getFileName().toString()) != null;
     }
 }

@@ -16,7 +16,7 @@ def load_graph(paths: list[Path]) -> Graph:
     return graph
 
 
-def fixture_result(path: str) -> tuple[bool, Graph]:
+def fixture_result(path: str) -> tuple[bool, Graph, str]:
     data = load_graph(
         [
             ROOT / path,
@@ -32,18 +32,22 @@ def fixture_result(path: str) -> tuple[bool, Graph]:
         )
     )
     shapes = load_graph(sorted((ROOT / "shapes/core").glob("*.ttl")))
-    conforms, report, _ = validate(data, shacl_graph=shapes, advanced=False)
-    return bool(conforms), report
+    conforms, report, report_text = validate(data, shacl_graph=shapes, advanced=False)
+    return bool(conforms), report, report_text
 
 
 def main() -> None:
-    positive_conforms, _ = fixture_result("fixtures/positive/core-valid.ttl")
-    negative_conforms, negative_report = fixture_result(
+    positive_conforms, _, positive_report_text = fixture_result(
+        "fixtures/positive/core-valid.ttl"
+    )
+    negative_conforms, negative_report, _ = fixture_result(
         "fixtures/negative/core-invalid.ttl"
     )
 
     if not positive_conforms:
-        raise SystemExit("pySHACL rejected the positive Core fixture")
+        raise SystemExit(
+            "pySHACL rejected the positive Core fixture:\n" + positive_report_text
+        )
     if negative_conforms:
         raise SystemExit("pySHACL accepted the negative Core fixture")
 

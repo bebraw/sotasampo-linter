@@ -18,11 +18,13 @@ linter:KnownVocabularyTermShape
         sh:select """
             PREFIX linter: <https://w3id.org/warsampo-linter#>
             PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-            SELECT DISTINCT $this ?path ?value ?message
+            SELECT DISTINCT $this ?path ?value ?message ?occurrence
             WHERE {
                 {
-                  ?subject ?term ?value .
+                  ?subject ?term ?object .
                   BIND(?term AS ?path)
+                  BIND(?subject AS ?value)
+                  BIND(?object AS ?occurrence)
                   BIND(linter:predicateTerm AS ?requiredRole)
                 }
                 UNION
@@ -30,6 +32,31 @@ linter:KnownVocabularyTermShape
                   ?subject rdf:type ?term .
                   BIND(?term AS ?path)
                   BIND(?subject AS ?value)
+                  BIND(linter:classTerm AS ?requiredRole)
+                }
+                UNION
+                {
+                  ?term rdf:type ?declarationType .
+                  FILTER(?declarationType IN (
+                    rdf:Property
+                    , <http://www.w3.org/2002/07/owl#ObjectProperty>
+                    , <http://www.w3.org/2002/07/owl#DatatypeProperty>
+                    , <http://www.w3.org/2002/07/owl#AnnotationProperty>
+                  ))
+                  BIND(rdf:type AS ?path)
+                  BIND(?term AS ?value)
+                  BIND(linter:predicateTerm AS ?requiredRole)
+                }
+                UNION
+                {
+                  ?term rdf:type ?declarationType .
+                  FILTER(?declarationType IN (
+                    <http://www.w3.org/2000/01/rdf-schema#Class>
+                    , <http://www.w3.org/2000/01/rdf-schema#Datatype>
+                    , <http://www.w3.org/2002/07/owl#Class>
+                  ))
+                  BIND(rdf:type AS ?path)
+                  BIND(?term AS ?value)
                   BIND(linter:classTerm AS ?requiredRole)
               }
               FILTER(isIRI(?term))
@@ -40,8 +67,17 @@ linter:KnownVocabularyTermShape
                 STRSTARTS(STR(?term), "http://www.w3.org/2004/02/skos/core#") ||
                 STRSTARTS(STR(?term), "http://purl.org/dc/terms/")
               )
+              FILTER(!(
+                ?requiredRole = linter:predicateTerm &&
+                REGEX(STR(?term), "^http://www[.]w3[.]org/1999/02/22-rdf-syntax-ns#_[1-9][0-9]*$")
+              ))
               FILTER NOT EXISTS { ?term ?requiredRole true }
-              BIND(CONCAT("Unknown standard vocabulary term ", STR(?term), " used by ", STR(?subject)) AS ?message)
+              BIND(CONCAT(
+                "Unknown standard vocabulary term ",
+                STR(?term),
+                " used by ",
+                STR(COALESCE(?subject, ?term))
+              ) AS ?message)
             }
         """ ;
     ] .
