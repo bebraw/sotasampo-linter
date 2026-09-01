@@ -6,7 +6,7 @@ The implemented architecture is recorded in [ADR-001](./docs/adrs/implemented/AD
 
 ## Quick start
 
-Docker is the only local prerequisite. The wrapper builds the Java 21 application when needed and runs it with a 4 GiB heap cap.
+Docker is the only local prerequisite for the included fixtures. The wrapper builds the Java 21 application when needed and runs it with a 4 GiB heap cap.
 
 ```sh
 ./scripts/linter.sh validate \
@@ -27,6 +27,16 @@ The profiles are cumulative:
 With `--cross-module`, local rules still run once per source module. Six reusable SKOS rules are then re-evaluated over a disk-backed union to catch facts split across files, and four explicitly integration-scoped rules run there as well. Results already found locally are de-duplicated. If any source fails to parse, union validation is skipped rather than querying an incomplete graph. Union progress identifies each rule and focus-node count as it runs; a successful summary includes the elapsed time per union rule. The full WarSampo union audit is intentionally opt-in; see the [completed audit record](./docs/baselines/2026-09-01-warsampo-union.md) for its findings and performance profile.
 
 Only RDF triple syntaxes are accepted. TriG, N-Quads, and other dataset syntaxes are rejected explicitly until the project defines how named graphs map to source modules and union validation.
+
+## Attach the WarSampo dataset
+
+The reproducible study snapshot is the [WarSampo Knowledge Graph 2.0.0 Zenodo archive](https://doi.org/10.5281/zenodo.3431122), not a live export from the Linked Data Finland endpoint. Fetch, checksum, extract, and apply the reviewed invalid-date correction with:
+
+```sh
+./scripts/fetch-warsampo.sh
+```
+
+This creates the ignored `warsampo/` directory expected by the examples below. It requires `curl`, `unzip`, `patch`, and an MD5 tool in addition to Docker, and refuses to overwrite an existing dataset. See the [dataset attachment guide](./docs/datasets/warsampo.md) for the pinned archive identity, a manual procedure, expected validation results, and troubleshooting.
 
 ## Reports and baselines
 
@@ -125,6 +135,7 @@ GitHub Actions runs the Java fixture/repair suite and the pySHACL compatibility 
 
 - [ADR index](./docs/adrs/README.md)
 - [ADR-001: Adopt SHACL for Linked-Data Linting and Guarded Repair](./docs/adrs/implemented/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md)
+- [Attach the pinned WarSampo dataset](./docs/datasets/warsampo.md)
 - [WarSampo project requirements](./docs/rules/warsampo-requirements.md)
 - [Current WarSampo baseline record, 2026-09-01](./docs/baselines/2026-09-01-warsampo.md)
 - [WarSampo cross-module audit, 2026-09-01](./docs/baselines/2026-09-01-warsampo-union.md)
