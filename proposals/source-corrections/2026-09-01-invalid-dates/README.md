@@ -28,9 +28,11 @@ This follows the linter ADR's rule that cleanup must not infer historical truth 
 
 ## Input and corrected checksums
 
+The inputs are the untouched files from the [WarSampo Knowledge Graph 2.0.0 archive](https://doi.org/10.5281/zenodo.3431122). The corrected hashes are the byte-for-byte results of applying `correction.patch` to that archive.
+
 | Module | Before SHA-256 | Corrected SHA-256 |
 | --- | --- | --- |
-| `warsa-event-data/output.ttl` | `fe1556e9b57033a620fbcdd09acd75058f33b9c0f6046dbc61200501f1fb9588` | `51925d1d3fdda3b9d319cef5e16598381c06707920b2ff5a3d1e861a696ad0fb` |
-| `warsa-event-data/times.ttl` | `0ef4aa1a0d03431eda218d54a06f9e433a3db2389ee32ae61426a0fddbe4147e` | `d4492e13d4c1a96e2d8fe8e1cdc61d8c019d6528b6ae57d6f932621e8f14e8b0` |
+| `warsa-event-data/output.ttl` | `fe1556e9b57033a620fbcdd09acd75058f33b9c0f6046dbc61200501f1fb9588` | `c6db7d7f62314a2535f06290fe534cf0fde75b28e7fbe457fe129c67b227b178` |
+| `warsa-event-data/times.ttl` | `0ef4aa1a0d03431eda218d54a06f9e433a3db2389ee32ae61426a0fddbe4147e` | `a363937fe807ef83e97ce8f1cd84015dd350cc7eead168171f28abff10bb396e` |
 
-The corrected local time module strictly parses and validates under the Core profile: 139,300 triples, zero findings, and zero parse failures. A complete module-local run then parsed all 61 modules and 13,873,089 triples with no parse failures; it produced the same 123 violations and one warning as the reviewed 60-module baseline. The corpus is ignored and has no owning Git checkout in this workspace; `correction.patch` is the portable artifact to submit to the source repository or generation pipeline.
+The patch was verified in the forward direction against a fresh extraction of the untouched Zenodo archive. The corrected local time module strictly parses and validates under the Core profile: 139,300 triples, zero findings, and zero parse failures. A complete module-local run then parsed all 61 modules and 13,873,089 triples with no parse failures; it produced the same 123 violations and one warning as the reviewed 60-module baseline. The corpus is ignored and has no owning Git checkout in this workspace; `correction.patch` is the portable artifact to submit to the source repository or generation pipeline.

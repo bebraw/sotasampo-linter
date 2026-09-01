@@ -22,7 +22,7 @@
 +++ b/warsa-event-data/times.ttl
 @@ -86015,12 +86015,6 @@
      a crm:E52_Time-Span ;
-     skos:prefLabel "1939-12-22-1939-12-29" .
+     skos:prefLabel "1939-12-22-1939-12-31" .
  
 -wti:time_1939-12-22-1939-12-35
 -    crm:P82a_begin_of_the_begin "1939-12-22"^^xsd:date ;
@@ -30,9 +30,9 @@
 -    a crm:E52_Time-Span ;
 -    skos:prefLabel "1939-12-22-1939-12-35" .
 -
- wti:time_1939-12-22-1939-12-31
+ wti:time_1939-12-22-1940-02-15
      crm:P82a_begin_of_the_begin "1939-12-22"^^xsd:date ;
-     crm:P82b_end_of_the_end "1939-12-31"^^xsd:date ;
+     crm:P82b_end_of_the_end "1940-02-15"^^xsd:date ;
 @@ -92987,11 +92981,11 @@
      a crm:E52_Time-Span ;
      skos:prefLabel "1940-02-29-1940-05-15" .
