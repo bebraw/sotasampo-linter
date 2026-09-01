@@ -22,9 +22,11 @@ The profiles are cumulative:
 | --- | ---: | --- |
 | `core` | 2 | strict parsing, standard-vocabulary term and role validation, datatype hygiene |
 | `skos` | 8 | Core plus SKOS label and relation integrity |
-| `warsampo` | 17 | SKOS plus WarSampo event, role, schema, and domain rules |
+| `warsampo` | 16 | SKOS plus WarSampo event, role, schema, and domain rules |
 
-With `--cross-module`, local rules still run once per source module and four explicitly integration-scoped rules run over a disk-backed union. The full WarSampo union audit is intentionally opt-in; see [the baseline record](./docs/baselines/2026-08-31-warsampo.md) for its current performance limitation.
+With `--cross-module`, local rules still run once per source module. Six reusable SKOS rules are then re-evaluated over a disk-backed union to catch facts split across files, and four explicitly integration-scoped rules run there as well. Results already found locally are de-duplicated. If any source fails to parse, union validation is skipped rather than querying an incomplete graph. The full WarSampo union audit is intentionally opt-in; see [the current baseline record](./docs/baselines/2026-09-01-warsampo.md) for its performance limitation.
+
+Only RDF triple syntaxes are accepted. TriG, N-Quads, and other dataset syntaxes are rejected explicitly until the project defines how named graphs map to source modules and union validation.
 
 ## Reports and baselines
 
@@ -39,9 +41,11 @@ The validator can emit a deterministic Turtle report, a text summary, and stable
   --baseline baselines/warsampo-local.tsv
 ```
 
-To review a new baseline, replace `--baseline` with `--write-baseline`. A signature includes the rule, focus node, path, value, source module, and message. The committed baseline accepts existing violations but never suppresses parsing failures or validator crashes.
+To review a new baseline, replace `--baseline` with `--write-baseline`. Baseline v2 signatures include the rule, SHACL constraint component, focus node, path, value, source module, and a deterministic occurrence index. Human-facing messages are deliberately excluded, so wording changes do not invalidate accepted findings. Only violations are written or compared; a baselined warning therefore cannot hide a later severity promotion.
 
-The current corpus contains one invalid `xsd:date` (`1939-12-35` in `warsampo/warsa-event-data/times.ttl`), so a complete corpus command exits with `2` even when every SHACL violation is baselined. This is an intentional distinction between accepted graph findings and input that cannot be parsed strictly.
+Summary output remains available after a parse failure, but SHACL reports and baseline output are suppressed because validation was incomplete. Output paths are preflighted so they cannot collide with each other, selected RDF inputs, or a baseline being compared. Individual report, summary, and baseline files are published atomically.
+
+The current corpus contains one invalid `xsd:date` (`1939-12-35` in `warsampo/warsa-event-data/times.ttl`), so a complete corpus command exits with `2` even when every SHACL violation is baselined. This is an intentional distinction between accepted graph findings and input that cannot be parsed strictly. The committed baseline was regenerated from the other 60 modules; its exact selection and results are recorded in [the baseline record](./docs/baselines/2026-09-01-warsampo.md).
 
 ## Guarded repairs
 
@@ -78,7 +82,9 @@ Applying a repair always requires a new, empty destination. Source data is never
   --output-dir reports/repaired
 ```
 
-An apply run records the repair ID, rule ID, source module, timestamp, and exact deleted/added RDF statements. It rejects updates without a corresponding validation finding, failed postconditions, or new violations, and a second run must be a no-op. Changed RDF copies are serialized by Jena, so review the generated triple patch rather than expecting a formatting-only source diff.
+Each repair declares its minimum validation profile. The guard automatically broadens the requested profile when necessary—for example, the SKOS typo repair is checked with the SKOS rules even if the command says `--profile core`. The executed graph delta must exactly match the declared substitutions; unexpected additions or deletions and many-to-one merges are rejected.
+
+An apply run records the repair ID, rule ID, source module, timestamp, and RDF statements actually deleted or added. It rejects updates without a corresponding validation finding, failed postconditions, or new violations, and a second run must be a no-op. Output is assembled in a sibling staging directory and atomically published only after every data copy plus mandatory `.warsampo-linter/repair.ru` and `.warsampo-linter/provenance.ttl` metadata is ready. Existing destinations and metadata files are never overwritten. Changed RDF copies are serialized by Jena, so review the generated triple patch rather than expecting a formatting-only source diff.
 
 ## Rule layout
 
@@ -89,13 +95,14 @@ shapes/
   integration/          generic union-graph checks
   warsampo/local/       WarSampo module checks
   warsampo/cross/       WarSampo union-graph checks
+  warsampo/requirements/ stable resources for accepted project contracts
 repairs/core/           declarative automatic repair catalog
 fixtures/               positive, negative, and repair fixtures
 vocabularies/           generated, role-aware standard-term manifest
 baselines/              reviewed regression signatures
 ```
 
-Every executable constraint has a stable IRI, explicit severity, message, layer, source justification, and fixture coverage. Prefer SHACL Core; use SHACL-SPARQL when the constraint is not clear in Core. Add rules to a reusable layer only when their meaning does not depend on WarSampo.
+Every executable constraint has a stable IRI, explicit severity, message, layer, source justification, and fixture coverage. WarSampo-specific source links resolve to the versioned requirement resources documented in [docs/rules/warsampo-requirements.md](./docs/rules/warsampo-requirements.md), rather than ephemeral external URLs. Prefer SHACL Core; use SHACL-SPARQL when the constraint is not clear in Core. Add rules to a reusable layer only when their meaning does not depend on WarSampo.
 
 The vocabulary manifest is generated from checksum-pinned official RDF, RDFS, OWL, SKOS, and DCMI graphs:
 
@@ -112,10 +119,11 @@ The vocabulary manifest is generated from checksum-pinned official RDF, RDFS, OW
 docker build -t warsampo-linter .
 ```
 
-GitHub Actions runs the Java fixture/repair suite and the pySHACL compatibility check. The ignored WarSampo checkout is not required in CI. Full-corpus measurements and the reviewed finding breakdown are recorded in [docs/baselines/2026-08-31-warsampo.md](./docs/baselines/2026-08-31-warsampo.md).
+GitHub Actions runs the Java fixture/repair suite and the pySHACL compatibility check. The ignored WarSampo checkout is not required in CI. Full-corpus measurements and the reviewed finding breakdown are recorded in [docs/baselines/2026-09-01-warsampo.md](./docs/baselines/2026-09-01-warsampo.md).
 
 ## Project documentation
 
 - [ADR index](./docs/adrs/README.md)
 - [ADR-001: Adopt SHACL for Linked-Data Linting and Guarded Repair](./docs/adrs/implemented/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md)
-- [WarSampo baseline record, 2026-08-31](./docs/baselines/2026-08-31-warsampo.md)
+- [WarSampo project requirements](./docs/rules/warsampo-requirements.md)
+- [Current WarSampo baseline record, 2026-09-01](./docs/baselines/2026-09-01-warsampo.md)

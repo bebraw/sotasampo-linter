@@ -78,7 +78,11 @@ shapes/
     skos/
     cidoc-crm/
     geosparql/
+  integration/
   warsampo/
+    local/
+    cross/
+    requirements/
 repairs/
   core/
   warsampo/
@@ -122,14 +126,17 @@ The validator will perform these stages in order:
 1. Parse every selected RDF source strictly and report file and source location where the parser provides them.
 2. Load the requested shape profile and its pinned vocabulary graphs.
 3. Run file- or module-local shapes without creating a global graph.
-4. Load a disk-backed union graph only for rules explicitly marked as cross-module.
-5. Emit the standard SHACL validation report as Turtle and a stable, human-readable summary;
-6. derive regression signatures from rule ID, focus node, result path, value, and source module; and
-7. compare signatures with the committed baseline when running in regression mode.
+4. Load a disk-backed union graph only when cross-module validation is requested, and run no union constraints unless every selected source parsed successfully.
+5. Re-evaluate union-sensitive reusable rules as well as explicitly cross-module rules, de-duplicating results already found locally.
+6. Emit the standard SHACL validation report as Turtle and a stable, human-readable summary;
+7. derive regression signatures from rule ID, constraint component, focus node, result path, value, source module, and deterministic occurrence index; and
+8. compare violation signatures with the committed baseline when running in regression mode.
 
-The default CI policy will fail on new `sh:Violation` signatures, malformed input, validator crashes, or invalid shape graphs. Existing accepted findings may be baselined initially so that adoption does not require repairing the entire corpus in one change. Removing a baseline entry requires the corresponding source issue to be fixed or explicitly reclassified.
+The default CI policy will fail on new `sh:Violation` signatures, malformed input, validator crashes, or invalid shape graphs. Existing accepted violations may be baselined initially so that adoption does not require repairing the entire corpus in one change. Warnings are not baselined, which prevents a warning from suppressing the same result after promotion to a violation. Removing a baseline entry requires the corresponding source issue to be fixed or explicitly reclassified.
 
-Results must be deterministic for the same data, shape profile, vocabulary versions, and configuration. Reports must not depend on blank-node labels or unstable iteration order.
+Results must be deterministic for the same data, shape profile, vocabulary versions, and configuration. Reports must not depend on blank-node labels or unstable iteration order. Messages remain report metadata but are excluded from signature identity so editorial changes do not invalidate the baseline. If strict parsing is incomplete, a diagnostic summary may be written, but no SHACL report or baseline may be published from the partial graph.
+
+The first implementation accepts RDF triple syntaxes only. RDF dataset syntaxes such as TriG and N-Quads are rejected until named-graph ownership, source-module attribution, and union semantics are explicitly defined.
 
 ### Repair safety policy
 
@@ -155,9 +162,11 @@ A fix run must:
 1. default to dry-run output;
 2. apply changes to a copy or generated patch, never silently rewrite source data;
 3. retain the rule ID, repair ID, affected triples, and timestamp as provenance;
-4. validate the repaired graph with the same and broader applicable profiles;
-5. reject a patch that introduces a new violation or fails its postcondition; and
-6. present a diff for human approval before source files are replaced.
+4. validate the repaired graph with the broader of the requested profile and the repair's declared minimum profile;
+5. compare the executed graph delta with the exact expected additions and deletions, rejecting side effects and many-to-one merges;
+6. reject a patch that introduces a new violation or fails its postcondition;
+7. stage every copied graph and mandatory patch/provenance artifact before atomically publishing a new destination directory; and
+8. present a diff for human approval before source files are replaced.
 
 No repair will infer historical truth merely to make a graph conform. If several repairs are valid, the linter reports alternatives rather than choosing one.
 
@@ -199,17 +208,19 @@ Aggregate quality metrics may later be published with the [Data Quality Vocabula
 
 ## Implementation
 
-Implemented on 2026-08-31 with Apache Jena 6.2.0 and Java 21. The repository now contains:
+Implemented on 2026-08-31 with Apache Jena 6.2.0 and Java 21, then corrected after implementation review on 2026-09-01. The repository now contains:
 
 - strict parsing, cumulative `core`, `skos`, and `warsampo` local profiles, plus explicitly integration-scoped union rules;
-- deterministic SHACL reports, stable regression signatures, baseline comparison, rule counts, elapsed time, and peak-heap reporting;
-- 17 local rules and four additional cross-module rules, covered by positive/negative fixtures;
+- deterministic, fail-closed SHACL reports; message-independent, multiplicity-preserving regression signatures; violation-only baseline comparison; rule counts; elapsed time; and sampled peak-heap reporting;
+- 16 local rules and four explicitly cross-module rules, with the six reusable SKOS rules also evaluated over a requested complete union, covered by positive/negative fixtures;
 - a checksum-pinned, role-aware standard-vocabulary manifest generated from official RDF graphs;
 - pySHACL compatibility coverage for the Core profile;
-- five declarative DASH/SPARQL Update repairs with dry-run output, copy-only application, provenance, postconditions, revalidation, and idempotence tests; and
+- five declarative DASH/SPARQL Update repairs with minimum guard profiles, exact-delta enforcement, dry-run output, atomically published copy-only application, provenance, postconditions, revalidation, and idempotence tests; and
 - GitHub Actions coverage for the Java and pySHACL fixture suites.
 
-The completed full module-local WarSampo run parsed 60 of 61 sources and 13,733,789 triples in 112,383 ms, with a peak JVM heap of 2,294.0 MiB. It reported 233 violations and one warning. The remaining source failed strict parsing because `1939-12-35` is not a valid `xsd:date`. The reviewed signatures are committed in `baselines/warsampo-local.tsv`; details are recorded in [the baseline record](../../baselines/2026-08-31-warsampo.md).
+The corrected module-local WarSampo baseline selected the 60 strictly parseable sources and 13,733,789 triples. It completed in 119,736 ms with a sampled peak JVM heap of 2,076.9 MiB and reported 123 violations plus one warning. The remaining source is excluded from baseline generation because `1939-12-35` is not a valid `xsd:date`; selecting it makes the run incomplete and suppresses report/baseline publication. The reviewed baseline v2 signatures are committed in `baselines/warsampo-local.tsv`; details and the reproducible selection are recorded in [the corrected baseline record](../../baselines/2026-09-01-warsampo.md).
+
+Review removed an unsupported WarSampo cardinality rule that had treated every subject of CIDOC CRM `P4_has_time-span` as an event and generated 110 false violations for legitimate war-diary periods. It also corrected SKOS reflexive-relation severities, complete-union evaluation, declared-term and `rdf:_n` vocabulary handling, named-graph rejection, report conformance fields, baseline severity handling, output collision/atomicity behavior, and actual repair-delta provenance. Project-specific shapes now cite stable requirement resources documented in the repository rather than broken external URLs.
 
 Cross-module execution is implemented using TDB2 and is verified on fixtures. A full-corpus union audit remained CPU-bound beyond 20 minutes and was stopped without committing a partial baseline. It is therefore an explicit audit path rather than a routine CI gate, and query-specific ARQ profiling is follow-up work. This limitation does not affect completion of the required full module-local baseline.
 
