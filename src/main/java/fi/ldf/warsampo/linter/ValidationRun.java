@@ -16,7 +16,8 @@ record ValidationRun(
         long triples,
         int rules,
         long peakHeapBytes,
-        Duration duration) {
+        Duration duration,
+        List<UnionRuleTiming> unionRuleTimings) {
 
     boolean hasRegressions() {
         return !regressions.isEmpty();
@@ -51,6 +52,16 @@ record ValidationRun(
         lines.add("Rules: " + rules + "; sampled peak JVM heap: " + formatMebibytes(peakHeapBytes) + " MiB");
         lines.add("Findings: " + violations + " violation(s), " + warnings + " warning(s), " + info + " info");
         lines.add("New violations: " + regressions.size());
+        if (!unionRuleTimings.isEmpty()) {
+            lines.add("Union rule timings:");
+            unionRuleTimings.forEach(timing -> lines.add("UNION_RULE "
+                    + timing.rule()
+                    + " "
+                    + timing.focusNodes()
+                    + " focus node(s) "
+                    + timing.duration().toMillis()
+                    + " ms"));
+        }
         if (!parseFailures.isEmpty()) {
             lines.add("Parse failures: " + parseFailures.size());
         }
@@ -70,6 +81,7 @@ record ValidationRun(
             int rules,
             long peakHeapBytes,
             Duration duration,
+            List<UnionRuleTiming> unionRuleTimings,
             Set<String> baseline) {
         List<Finding> sorted = findings.stream().sorted(Finding.ORDER).toList();
         List<Finding> regressions = sorted.stream()
@@ -84,7 +96,29 @@ record ValidationRun(
                 triples,
                 rules,
                 peakHeapBytes,
-                duration);
+                duration,
+                List.copyOf(unionRuleTimings));
+    }
+
+    static ValidationRun of(
+            List<Finding> findings,
+            List<String> parseFailures,
+            int modules,
+            long triples,
+            int rules,
+            long peakHeapBytes,
+            Duration duration,
+            Set<String> baseline) {
+        return of(
+                findings,
+                parseFailures,
+                modules,
+                triples,
+                rules,
+                peakHeapBytes,
+                duration,
+                List.of(),
+                baseline);
     }
 
     private static String formatMebibytes(long bytes) {

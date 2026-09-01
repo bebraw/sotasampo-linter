@@ -167,6 +167,8 @@ class ValidationServiceTest {
         assertTrue(run.parseFailures().isEmpty());
         assertEquals(1, run.modules());
         assertFalse(run.hasRegressions());
+        assertEquals(1, run.unionRuleTimings().size());
+        assertTrue(run.unionRuleTimings().getFirst().rule().contains("DuplicateIdentifierShape"));
     }
 
     @Test
@@ -189,6 +191,7 @@ class ValidationServiceTest {
         assertEquals(1, run.modules());
         assertEquals(1, run.parseFailures().size());
         assertEquals(1, run.findings().size());
+        assertTrue(run.unionRuleTimings().isEmpty());
         assertTrue(run.findings().stream().noneMatch(finding -> finding.sourceModule().equals("@union")));
     }
 

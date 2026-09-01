@@ -24,7 +24,7 @@ The profiles are cumulative:
 | `skos` | 8 | Core plus SKOS label and relation integrity |
 | `warsampo` | 16 | SKOS plus WarSampo event, role, schema, and domain rules |
 
-With `--cross-module`, local rules still run once per source module. Six reusable SKOS rules are then re-evaluated over a disk-backed union to catch facts split across files, and four explicitly integration-scoped rules run there as well. Results already found locally are de-duplicated. If any source fails to parse, union validation is skipped rather than querying an incomplete graph. The full WarSampo union audit is intentionally opt-in; see [the current baseline record](./docs/baselines/2026-09-01-warsampo.md) for its performance limitation.
+With `--cross-module`, local rules still run once per source module. Six reusable SKOS rules are then re-evaluated over a disk-backed union to catch facts split across files, and four explicitly integration-scoped rules run there as well. Results already found locally are de-duplicated. If any source fails to parse, union validation is skipped rather than querying an incomplete graph. Union progress identifies each rule and focus-node count as it runs; a successful summary includes the elapsed time per union rule. The full WarSampo union audit is intentionally opt-in; see [the current baseline record](./docs/baselines/2026-09-01-warsampo.md) for its performance limitation.
 
 Only RDF triple syntaxes are accepted. TriG, N-Quads, and other dataset syntaxes are rejected explicitly until the project defines how named graphs map to source modules and union validation.
 

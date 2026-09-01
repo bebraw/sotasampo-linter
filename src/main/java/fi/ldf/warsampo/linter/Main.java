@@ -40,7 +40,7 @@ public final class Main {
 
     private static int runValidate(String[] args, PrintStream out, PrintStream err) throws Exception {
         ValidationOptions options = ValidationOptions.parse(args);
-        ValidationRun run = new ValidationService(options).run();
+        ValidationRun run = new ValidationService(options, err::println).run();
         run.writeOutputs(options, out);
 
         if (!run.parseFailures().isEmpty()) {

@@ -6,9 +6,12 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
+import org.apache.jena.graph.Node;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ReadWrite;
 import org.apache.jena.rdf.model.Model;
@@ -17,15 +20,24 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.shacl.ShaclValidator;
 import org.apache.jena.shacl.Shapes;
 import org.apache.jena.shacl.ValidationReport;
+import org.apache.jena.shacl.engine.ValidationContext;
+import org.apache.jena.shacl.parser.Shape;
+import org.apache.jena.shacl.validation.VLib;
 import org.apache.jena.tdb2.TDB2Factory;
 import org.apache.jena.vocabulary.RDF;
 
 final class ValidationService {
     private final ValidationOptions options;
+    private final Consumer<String> progress;
     private final RdfLoader loader = new RdfLoader();
 
     ValidationService(ValidationOptions options) {
+        this(options, ignored -> {});
+    }
+
+    ValidationService(ValidationOptions options, Consumer<String> progress) {
         this.options = options;
+        this.progress = progress;
     }
 
     ValidationRun run() throws IOException {
@@ -65,6 +77,7 @@ final class ValidationService {
                     ruleCount,
                     heap.peakHeapBytes(),
                     Duration.between(start, Instant.now()),
+                    accumulator.unionRuleTimings,
                     baseline);
         }
     }
@@ -139,10 +152,11 @@ final class ValidationService {
                             .map(Finding::semanticKey)
                             .collect(java.util.stream.Collectors.toSet());
                     ValidationAccumulator unionAccumulator = new ValidationAccumulator();
-                    collect(unionShapes, dataset.getDefaultModel(), "@union", unionAccumulator);
+                    collectUnion(unionShapes, dataset.getDefaultModel(), unionAccumulator);
                     unionAccumulator.findings.stream()
                             .filter(finding -> !localKeys.contains(finding.semanticKey()))
                             .forEach(accumulator.findings::add);
+                    accumulator.unionRuleTimings.addAll(unionAccumulator.unionRuleTimings);
                 } finally {
                     dataset.end();
                 }
@@ -158,12 +172,42 @@ final class ValidationService {
 
     private void collect(Shapes shapes, Model data, String module, ValidationAccumulator accumulator) {
         ValidationReport report = ShaclValidator.get().validate(shapes, data.getGraph());
+        collectReport(report, data, module, accumulator);
+    }
+
+    private void collectUnion(Shapes shapes, Model data, ValidationAccumulator accumulator) {
+        ValidationContext context = ValidationContext.create(shapes, data.getGraph());
+        List<Shape> targetShapes = shapes.getTargetShapes().stream()
+                .sorted(Comparator.comparing(shape -> shape.getShapeNode().toString()))
+                .toList();
+        for (Shape shape : targetShapes) {
+            String rule = formatNode(shape.getShapeNode());
+            progress.accept("Union rule " + rule + " started");
+            Instant start = Instant.now();
+            Collection<Node> focusNodes = VLib.focusNodes(data.getGraph(), shape);
+            progress.accept("Union rule " + rule + " selected " + focusNodes.size() + " focus node(s)");
+            for (Node focusNode : focusNodes) {
+                VLib.validateShape(context, data.getGraph(), shape, focusNode);
+            }
+            Duration duration = Duration.between(start, Instant.now());
+            accumulator.unionRuleTimings.add(new UnionRuleTiming(rule, focusNodes.size(), duration));
+            progress.accept("Union rule " + rule + " completed in " + duration.toMillis() + " ms");
+        }
+        collectReport(context.generateReport(), data, "@union", accumulator);
+    }
+
+    private void collectReport(
+            ValidationReport report, Model data, String module, ValidationAccumulator accumulator) {
         Model reportModel = ModelFactory.createModelForGraph(report.getGraph());
         List<Resource> resources = reportModel.listResourcesWithProperty(RDF.type, Finding.VALIDATION_RESULT).toList();
         List<Finding> findings = resources.stream()
                 .map(resource -> Finding.from(resource, reportModel, data, module))
                 .toList();
         accumulator.findings.addAll(Finding.normalizeOccurrences(findings));
+    }
+
+    private static String formatNode(Node node) {
+        return node.isURI() ? "<" + node.getURI() + ">" : node.toString();
     }
 
     private void addAuditConfiguration(Model model) {
@@ -231,6 +275,7 @@ final class ValidationService {
     private static final class ValidationAccumulator {
         private final List<Finding> findings = new ArrayList<>();
         private final List<String> parseFailures = new ArrayList<>();
+        private final List<UnionRuleTiming> unionRuleTimings = new ArrayList<>();
         private int modules;
         private long triples;
     }
