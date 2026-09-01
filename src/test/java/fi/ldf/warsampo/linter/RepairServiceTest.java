@@ -109,10 +109,97 @@ class RepairServiceTest {
         assertTrue(error.getMessage().contains("must be empty"));
     }
 
-    private RepairOptions options(boolean apply, Path output, Set<String> ids, boolean allAutomatic) {
-        return new RepairOptions(
+    @Test
+    void skosRepairUsesItsBroaderValidationProfile(@TempDir Path temporaryDirectory) throws Exception {
+        Path data = temporaryDirectory.resolve("duplicate-after-repair.ttl");
+        Files.writeString(
+                data,
+                """
+                @prefix ex: <https://example.org/> .
+                @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+                ex:concept skos:preflabel "First"@en ; skos:prefLabel "Second"@en .
+                """);
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> new RepairService(options(data, false, null, Set.of("RepairSkosPreflabel"), false)).run());
+
+        assertTrue(error.getMessage().contains("introduces"));
+    }
+
+    @Test
+    void provenanceDoesNotClaimPreexistingReplacementWasAdded(@TempDir Path temporaryDirectory) throws Exception {
+        Path data = temporaryDirectory.resolve("preexisting-replacement.ttl");
+        Files.writeString(
+                data,
+                """
+                @prefix ex: <https://example.org/> .
+                @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+                ex:concept skos:preflabel "Concept"@en ; skos:prefLabel "Concept"@en .
+                """);
+
+        RepairRun run = new RepairService(
+                        options(data, false, null, Set.of("RepairSkosPreflabel"), false))
+                .run();
+
+        assertEquals(1, run.changes().size());
+        assertFalse(run.provenance().contains(null, ResourceFactory.createProperty(DASH + "addedTriple")));
+        assertTrue(run.provenance().contains(null, ResourceFactory.createProperty(DASH + "deletedTriple")));
+    }
+
+    @Test
+    void applyPreflightsMetadataBeforePublishingCopies(@TempDir Path temporaryDirectory) throws Exception {
+        Path output = temporaryDirectory.resolve("repaired");
+        Path existingPatch = temporaryDirectory.resolve("existing.ru");
+        Files.writeString(existingPatch, "keep");
+        RepairOptions options = new RepairOptions(
                 root,
                 List.of(fixture),
+                Profile.CORE,
+                Set.of(),
+                true,
+                true,
+                output,
+                existingPatch,
+                null);
+
+        assertThrows(IllegalArgumentException.class, () -> new RepairService(options).run());
+        assertFalse(Files.exists(output));
+        assertEquals("keep", Files.readString(existingPatch));
+    }
+
+    @Test
+    void applyRejectsMetadataThatWouldReplaceACopiedGraph(@TempDir Path temporaryDirectory) {
+        Path output = temporaryDirectory.resolve("repaired");
+        Path copiedGraph = output.resolve(root.relativize(fixture));
+        RepairOptions options = new RepairOptions(
+                root,
+                List.of(fixture),
+                Profile.CORE,
+                Set.of(),
+                true,
+                true,
+                output,
+                copiedGraph,
+                null);
+
+        IllegalArgumentException error =
+                assertThrows(IllegalArgumentException.class, () -> new RepairService(options).run());
+
+        assertTrue(error.getMessage().contains("conflicts with a published repair file"));
+        assertFalse(Files.exists(output));
+    }
+
+    private RepairOptions options(boolean apply, Path output, Set<String> ids, boolean allAutomatic) {
+        return options(fixture, apply, output, ids, allAutomatic);
+    }
+
+    private RepairOptions options(Path data, boolean apply, Path output, Set<String> ids, boolean allAutomatic) {
+        return new RepairOptions(
+                root,
+                List.of(data),
                 Profile.CORE,
                 ids,
                 allAutomatic,
