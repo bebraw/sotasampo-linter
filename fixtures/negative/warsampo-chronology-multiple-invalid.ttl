@@ -1,0 +1,36 @@
+@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix wac: <http://ldf.fi/warsa/actors/> .
+@prefix wev: <http://ldf.fi/warsa/events/> .
+@prefix wsc: <http://ldf.fi/schema/warsa/> .
+@prefix wti: <http://ldf.fi/warsa/events/times/> .
+
+wac:chronologyPerson a wsc:Person .
+
+wev:birthFirst
+    a wsc:Birth ;
+    crm:P98_brought_into_life wac:chronologyPerson ;
+    crm:P4_has_time-span wti:birthFirstSpan .
+
+wti:birthFirstSpan crm:P82b_end_of_the_end "1999-12-31"^^xsd:date .
+
+wev:birthLatest
+    a wsc:Birth ;
+    crm:P98_brought_into_life wac:chronologyPerson ;
+    crm:P4_has_time-span wti:birthLatestSpan .
+
+wti:birthLatestSpan crm:P82b_end_of_the_end "2000-12-31"^^xsd:date .
+
+wev:deathEarliest
+    a wsc:Death ;
+    crm:P100_was_death_of wac:chronologyPerson ;
+    crm:P4_has_time-span wti:deathEarliestSpan .
+
+wti:deathEarliestSpan crm:P82a_begin_of_the_begin "1990-01-01"^^xsd:date .
+
+wev:deathSecond
+    a wsc:Death ;
+    crm:P100_was_death_of wac:chronologyPerson ;
+    crm:P4_has_time-span wti:deathSecondSpan .
+
+wti:deathSecondSpan crm:P82a_begin_of_the_begin "1991-01-01"^^xsd:date .

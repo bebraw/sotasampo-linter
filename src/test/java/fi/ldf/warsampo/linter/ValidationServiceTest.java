@@ -365,6 +365,23 @@ class ValidationServiceTest {
         assertTrue(invalid.findings().stream().anyMatch(finding -> finding.rule().contains("EventParticipantTypeShape")));
     }
 
+    @Test
+    void chronologyAggregatesMultipleLifeEventsPerPerson(@TempDir Path temporaryDirectory) throws Exception {
+        ValidationRun run = validate(
+                "fixtures/negative/warsampo-chronology-multiple-invalid.ttl",
+                Profile.WARSAMPO,
+                true,
+                null,
+                null,
+                temporaryDirectory.resolve("chronology-multiple-tdb"));
+
+        assertEquals(
+                1,
+                run.findings().stream()
+                        .filter(finding -> finding.rule().contains("BirthDeathChronologyShape"))
+                        .count());
+    }
+
     private ValidationRun validate(String data, boolean crossModule, Path baseline, Path writeBaseline)
             throws Exception {
         return validate(data, crossModule, baseline, writeBaseline, null);

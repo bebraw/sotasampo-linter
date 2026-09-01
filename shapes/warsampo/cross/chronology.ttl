@@ -15,16 +15,28 @@ linter:BirthDeathChronologyShape
         sh:select """
             PREFIX crm: <http://www.cidoc-crm.org/cidoc-crm/>
             PREFIX wsc: <http://ldf.fi/schema/warsa/>
-            SELECT DISTINCT $this (crm:P4_has_time-span AS ?path) ?value ?message
+            SELECT $this (crm:P4_has_time-span AS ?path) ?value ?message
             WHERE {
-              ?birth a wsc:Birth ;
-                     crm:P98_brought_into_life ?person ;
-                     crm:P4_has_time-span ?birthSpan .
-              ?birthSpan crm:P82b_end_of_the_end ?birthEnd .
-              ?death a wsc:Death ;
-                     crm:P100_was_death_of ?person ;
-                     crm:P4_has_time-span ?deathSpan .
-              ?deathSpan crm:P82a_begin_of_the_begin ?deathBegin .
+              {
+                SELECT ?person (MAX(?candidateBirthEnd) AS ?birthEnd)
+                WHERE {
+                  ?birth a wsc:Birth ;
+                         crm:P98_brought_into_life ?person ;
+                         crm:P4_has_time-span ?birthSpan .
+                  ?birthSpan crm:P82b_end_of_the_end ?candidateBirthEnd .
+                }
+                GROUP BY ?person
+              }
+              {
+                SELECT ?person (MIN(?candidateDeathBegin) AS ?deathBegin)
+                WHERE {
+                  ?death a wsc:Death ;
+                         crm:P100_was_death_of ?person ;
+                         crm:P4_has_time-span ?deathSpan .
+                  ?deathSpan crm:P82a_begin_of_the_begin ?candidateDeathBegin .
+                }
+                GROUP BY ?person
+              }
               FILTER(?birthEnd > ?deathBegin)
               BIND(?person AS ?value)
               BIND(CONCAT("Person ", STR(?person), " has birth end ", STR(?birthEnd), " after death begin ", STR(?deathBegin)) AS ?message)
