@@ -1,13 +1,9 @@
 package fi.ldf.warsampo.linter;
 
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -18,9 +14,7 @@ import org.apache.jena.graph.Node;
 import org.apache.jena.graph.NodeFactory;
 import org.apache.jena.graph.Triple;
 import org.apache.jena.rdf.model.Model;
-import org.apache.jena.riot.Lang;
-import org.apache.jena.riot.RDFDataMgr;
-import org.apache.jena.riot.RDFLanguages;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.update.UpdateAction;
 import org.apache.jena.update.UpdateFactory;
 import org.apache.jena.vocabulary.RDF;
@@ -38,13 +32,14 @@ final class RepairService {
         if (files.isEmpty()) {
             throw new IllegalArgumentException("No RDF files found in the selected data paths.");
         }
-        if (options.apply()) {
-            requireEmptyOutputDirectory(options.outputDirectory());
-        }
+        RepairRun.preflight(options, files);
 
         List<RepairDefinition> definitions =
                 RepairCatalog.load(options.root(), options.repairIds(), options.allAutomatic());
-        ProfileValidationContext validation = ProfileValidationContext.load(options.root(), options.profile());
+        Profile guardProfile = definitions.stream()
+                .map(RepairDefinition::validationProfile)
+                .reduce(options.profile(), Profile::broader);
+        ProfileValidationContext validation = ProfileValidationContext.load(options.root(), guardProfile);
         List<TripleChange> changes = new ArrayList<>();
         Map<Path, Model> sourceModels = new LinkedHashMap<>();
         Set<String> applicableRepairIds = new LinkedHashSet<>();
@@ -61,10 +56,24 @@ final class RepairService {
                     continue;
                 }
                 requireCorrespondingFinding(definition, beforeFindings, module);
-                for (Triple before : matches) {
-                    changes.add(new TripleChange(module, definition, before, replace(before, definition)));
+                Model beforeUpdate = ModelFactory.createDefaultModel().add(model);
+                Set<Triple> expectedDeleted = Set.copyOf(matches);
+                Set<Triple> replacementTriples = matches.stream()
+                        .map(before -> replace(before, definition))
+                        .collect(java.util.stream.Collectors.toSet());
+                if (replacementTriples.size() != matches.size()) {
+                    throw new IllegalArgumentException(
+                            "Repair rejected because multiple triples would merge: " + definition.id());
                 }
+                Set<Triple> expectedAdded = replacementTriples.stream()
+                        .filter(triple -> !beforeUpdate.getGraph().contains(triple))
+                        .collect(java.util.stream.Collectors.toSet());
                 UpdateAction.execute(UpdateFactory.create(definition.update()), model);
+                requireExactDelta(beforeUpdate, model, expectedDeleted, expectedAdded, definition);
+                for (Triple before : matches) {
+                    Triple after = replace(before, definition);
+                    changes.add(new TripleChange(module, definition, before, after, expectedAdded.contains(after)));
+                }
                 applicableRepairIds.add(definition.id());
                 requirePostcondition(model, definition, matches);
             }
@@ -88,44 +97,9 @@ final class RepairService {
         String patch = buildPatch(applicableDefinitions);
         UpdateFactory.create(patch);
 
-        List<Path> written = options.apply() ? writeCopies(sourceModels, sortedChanges) : List.of();
         Instant timestamp = Instant.now();
         Model provenance = RepairProvenanceWriter.create(sortedChanges, options.apply(), timestamp);
-        return new RepairRun(sortedChanges, patch, provenance, timestamp, options.apply(), written);
-    }
-
-    private List<Path> writeCopies(Map<Path, Model> sourceModels, List<TripleChange> changes) throws IOException {
-        Files.createDirectories(options.outputDirectory());
-        Set<String> changedModules = changes.stream().map(TripleChange::sourceModule).collect(java.util.stream.Collectors.toSet());
-        Map<Path, Path> targets = new HashMap<>();
-        Set<Path> uniqueTargets = new HashSet<>();
-        for (Path source : sourceModels.keySet()) {
-            Path target = options.outputDirectory().resolve(relativeOutputPath(source)).normalize();
-            if (source.equals(target)) {
-                throw new IllegalArgumentException("Repair output would overwrite source data: " + source);
-            }
-            if (!target.startsWith(options.outputDirectory()) || !uniqueTargets.add(target)) {
-                throw new IllegalArgumentException("Cannot derive a unique safe repair output path for " + source);
-            }
-            targets.put(source, target);
-        }
-
-        List<Path> written = new ArrayList<>();
-        for (Map.Entry<Path, Model> entry : sourceModels.entrySet()) {
-            Path source = entry.getKey();
-            Path target = targets.get(source);
-            Files.createDirectories(target.getParent());
-            if (!changedModules.contains(moduleName(source))) {
-                Files.copy(source, target, StandardCopyOption.COPY_ATTRIBUTES);
-            } else {
-                Lang language = RDFLanguages.filenameToLang(source.getFileName().toString());
-                try (OutputStream stream = Files.newOutputStream(target)) {
-                    RDFDataMgr.write(stream, entry.getValue(), language);
-                }
-            }
-            written.add(target);
-        }
-        return List.copyOf(written);
+        return new RepairRun(sortedChanges, patch, provenance, timestamp, options.apply(), sourceModels);
     }
 
     private static List<Triple> matchingTriples(Model model, String badIri) {
@@ -165,6 +139,30 @@ final class RepairService {
         }
     }
 
+    private static void requireExactDelta(
+            Model before,
+            Model after,
+            Set<Triple> expectedDeleted,
+            Set<Triple> expectedAdded,
+            RepairDefinition definition) {
+        Set<Triple> beforeTriples = triples(before);
+        Set<Triple> afterTriples = triples(after);
+        Set<Triple> actualDeleted = new HashSet<>(beforeTriples);
+        actualDeleted.removeAll(afterTriples);
+        Set<Triple> actualAdded = new HashSet<>(afterTriples);
+        actualAdded.removeAll(beforeTriples);
+        if (!actualDeleted.equals(expectedDeleted) || !actualAdded.equals(expectedAdded)) {
+            throw new IllegalArgumentException(
+                    "Repair rejected because its actual graph delta differs from its declaration: " + definition.id());
+        }
+    }
+
+    private static Set<Triple> triples(Model model) {
+        Set<Triple> triples = new HashSet<>();
+        model.getGraph().find().forEachRemaining(triples::add);
+        return Set.copyOf(triples);
+    }
+
     private static void requireCorrespondingFinding(
             RepairDefinition definition, List<Finding> findings, String module) {
         String rule = "<" + definition.ruleId() + ">";
@@ -192,14 +190,6 @@ final class RepairService {
         return absolute.toString().replace('\\', '/');
     }
 
-    private Path relativeOutputPath(Path source) {
-        Path absolute = source.toAbsolutePath().normalize();
-        if (absolute.startsWith(options.root())) {
-            return options.root().relativize(absolute);
-        }
-        return absolute.getFileName();
-    }
-
     private static String buildPatch(List<RepairDefinition> definitions) {
         if (definitions.isEmpty()) {
             return "# No applicable automatic repairs\n";
@@ -210,17 +200,4 @@ final class RepairService {
         return String.join("\n;\n\n", blocks) + "\n";
     }
 
-    private static void requireEmptyOutputDirectory(Path directory) throws IOException {
-        if (!Files.exists(directory)) {
-            return;
-        }
-        if (!Files.isDirectory(directory)) {
-            throw new IllegalArgumentException("Repair output path is not a directory: " + directory);
-        }
-        try (var entries = Files.list(directory)) {
-            if (entries.findAny().isPresent()) {
-                throw new IllegalArgumentException("Repair output directory must be empty: " + directory);
-            }
-        }
-    }
 }

@@ -75,6 +75,7 @@ final class RepairCatalog {
         Resource rule = requiredResource(resource, LinterVocabulary.REPAIRS_RULE);
         Resource badIri = requiredResource(resource, LinterVocabulary.BAD_IRI);
         Resource replacementIri = requiredResource(resource, LinterVocabulary.REPLACEMENT_IRI);
+        String validationProfile = requiredLiteral(resource, LinterVocabulary.VALIDATION_PROFILE);
         Resource generator = requiredResource(resource, SUGGESTION_GENERATOR);
         String update = requiredLiteral(generator, UPDATE);
         UpdateFactory.create(update);
@@ -95,6 +96,7 @@ final class RepairCatalog {
                 rule.getURI(),
                 badIri.getURI(),
                 replacementIri.getURI(),
+                Profile.parse(validationProfile),
                 update.strip());
     }
 

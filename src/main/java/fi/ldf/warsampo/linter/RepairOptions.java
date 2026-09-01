@@ -80,17 +80,11 @@ record RepairOptions(
                 resolveNullable(root, provenancePath));
     }
 
-    Path effectivePatchPath() {
-        if (patchPath != null) {
-            return patchPath;
-        }
+    Path mandatoryPatchPath() {
         return apply ? outputDirectory.resolve(".warsampo-linter/repair.ru") : null;
     }
 
-    Path effectiveProvenancePath() {
-        if (provenancePath != null) {
-            return provenancePath;
-        }
+    Path mandatoryProvenancePath() {
         return apply ? outputDirectory.resolve(".warsampo-linter/provenance.ttl") : null;
     }
 

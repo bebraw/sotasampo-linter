@@ -6,4 +6,5 @@ record RepairDefinition(
         String ruleId,
         String badIri,
         String replacementIri,
+        Profile validationProfile,
         String update) {}

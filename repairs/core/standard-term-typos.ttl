@@ -16,6 +16,7 @@ linter:RepairRdfsSubClassof
     linter:repairsRule linter:KnownVocabularyTermShape ;
     linter:badIri rdfs:subClassof ;
     linter:replacementIri rdfs:subClassOf ;
+    linter:validationProfile "core" ;
     dash:suggestionGenerator [
         a dash:SPARQLUpdateSuggestionGenerator ;
         sh:message "Replace rdfs:subClassof with rdfs:subClassOf" ;
@@ -35,6 +36,7 @@ linter:RepairRdfsProperty
     linter:repairsRule linter:KnownVocabularyTermShape ;
     linter:badIri rdfs:Property ;
     linter:replacementIri rdf:Property ;
+    linter:validationProfile "core" ;
     dash:suggestionGenerator [
         a dash:SPARQLUpdateSuggestionGenerator ;
         sh:message "Replace rdfs:Property with rdf:Property" ;
@@ -54,6 +56,7 @@ linter:RepairDctBibliographiccitation
     linter:repairsRule linter:KnownVocabularyTermShape ;
     linter:badIri dct:bibliographiccitation ;
     linter:replacementIri dct:bibliographicCitation ;
+    linter:validationProfile "core" ;
     dash:suggestionGenerator [
         a dash:SPARQLUpdateSuggestionGenerator ;
         sh:message "Replace dct:bibliographiccitation with dct:bibliographicCitation" ;
@@ -73,6 +76,7 @@ linter:RepairSkosPreflabel
     linter:repairsRule linter:KnownVocabularyTermShape ;
     linter:badIri skos:preflabel ;
     linter:replacementIri skos:prefLabel ;
+    linter:validationProfile "skos" ;
     dash:suggestionGenerator [
         a dash:SPARQLUpdateSuggestionGenerator ;
         sh:message "Replace skos:preflabel with skos:prefLabel" ;
@@ -92,6 +96,7 @@ linter:RepairOwlSame
     linter:repairsRule linter:KnownVocabularyTermShape ;
     linter:badIri owl:same ;
     linter:replacementIri owl:sameAs ;
+    linter:validationProfile "core" ;
     dash:suggestionGenerator [
         a dash:SPARQLUpdateSuggestionGenerator ;
         sh:message "Replace owl:same with owl:sameAs" ;

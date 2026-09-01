@@ -17,6 +17,7 @@ final class LinterVocabulary {
     static final Property REPAIRS_RULE = ResourceFactory.createProperty(NS + "repairsRule");
     static final Property BAD_IRI = ResourceFactory.createProperty(NS + "badIri");
     static final Property REPLACEMENT_IRI = ResourceFactory.createProperty(NS + "replacementIri");
+    static final Property VALIDATION_PROFILE = ResourceFactory.createProperty(NS + "validationProfile");
     static final Property REPAIR_ID = ResourceFactory.createProperty(NS + "repairId");
 
     private LinterVocabulary() {}

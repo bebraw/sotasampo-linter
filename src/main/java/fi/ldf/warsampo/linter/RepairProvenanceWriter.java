@@ -44,13 +44,15 @@ final class RepairProvenanceWriter {
             String changeHash = StableTerm.sha256(change.sortKey());
             Resource graphUpdate = model.createResource("urn:warsampo-linter:graph-update:" + changeHash);
             Resource deleted = statement(model, change.before(), changeHash + ":deleted");
-            Resource added = statement(model, change.after(), changeHash + ":added");
             graphUpdate.addProperty(RDF.type, GRAPH_UPDATE)
                     .addProperty(LinterVocabulary.REPAIR_ID, model.createResource(change.repair().id()))
                     .addProperty(LinterVocabulary.REPAIRS_RULE, model.createResource(change.repair().ruleId()))
                     .addLiteral(LinterVocabulary.SOURCE_MODULE, change.sourceModule())
-                    .addProperty(DELETED_TRIPLE, deleted)
-                    .addProperty(ADDED_TRIPLE, added);
+                    .addProperty(DELETED_TRIPLE, deleted);
+            if (change.replacementAdded()) {
+                Resource added = statement(model, change.after(), changeHash + ":added");
+                graphUpdate.addProperty(ADDED_TRIPLE, added);
+            }
             run.addProperty(CHANGE, graphUpdate);
         }
         return model;
@@ -58,7 +60,7 @@ final class RepairProvenanceWriter {
 
     static void write(Path path, Model model) throws IOException {
         Baseline.ensureParent(path);
-        Files.writeString(path, serialize(model), StandardCharsets.UTF_8);
+        AtomicFiles.writeString(path, serialize(model));
     }
 
     static String serialize(Model model) {
