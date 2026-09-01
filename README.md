@@ -45,7 +45,7 @@ To review a new baseline, replace `--baseline` with `--write-baseline`. Baseline
 
 Summary output remains available after a parse failure, but SHACL reports and baseline output are suppressed because validation was incomplete. Output paths are preflighted so they cannot collide with each other, selected RDF inputs, or a baseline being compared. Individual report, summary, and baseline files are published atomically.
 
-The current corpus contains one invalid `xsd:date` (`1939-12-35` in `warsampo/warsa-event-data/times.ttl`), so a complete corpus command exits with `2` even when every SHACL violation is baselined. This is an intentional distinction between accepted graph findings and input that cannot be parsed strictly. The committed baseline was regenerated from the other 60 modules; its exact selection and results are recorded in [the baseline record](./docs/baselines/2026-09-01-warsampo.md).
+Strict parsing exposed two invalid `xsd:date` values in `warsampo/warsa-event-data/times.ttl`: `1939-12-35` and `1940-02-30`. A portable [source-correction proposal](./proposals/source-corrections/2026-09-01-invalid-dates/README.md) documents the evidence and avoids inventing an unknown historical start date. With that proposal applied to the ignored local snapshot, the committed baseline covers all 61 modules. Its exact corpus scope and results are recorded in [the baseline record](./docs/baselines/2026-09-01-warsampo.md).
 
 ## Guarded repairs
 
@@ -127,3 +127,5 @@ GitHub Actions runs the Java fixture/repair suite and the pySHACL compatibility 
 - [ADR-001: Adopt SHACL for Linked-Data Linting and Guarded Repair](./docs/adrs/implemented/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md)
 - [WarSampo project requirements](./docs/rules/warsampo-requirements.md)
 - [Current WarSampo baseline record, 2026-09-01](./docs/baselines/2026-09-01-warsampo.md)
+- [Colleague-facing findings brief](./docs/findings/2026-09-01-colleague-brief.md)
+- [Invalid event-date correction proposal](./proposals/source-corrections/2026-09-01-invalid-dates/README.md)

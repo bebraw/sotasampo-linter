@@ -1,0 +1,50 @@
+--- a/warsa-event-data/output.ttl
++++ b/warsa-event-data/output.ttl
+@@ -6745,7 +6745,7 @@
+     dct:source wso:source1 ;
+     crm:P11_had_participant wac:actor_763,
+         wac:person_578 ;
+-    crm:P4_has_time-span wti:time_1939-12-22-1939-12-35 ;
++    crm:P4_has_time-span wti:time_1939-12-22-1939-12-23 ;
+     crm:P7_took_place_at <http://ldf.fi/pnr/P_10204476> ;
+     skos:prefLabel "Parissavaara"@fi .
+ 
+@@ -8462,7 +8462,7 @@
+     dct:source wso:source1 ;
+     crm:P11_had_participant wac:actor_2906,
+         wac:person_646 ;
+-    crm:P4_has_time-span wti:time_1940-02-30-1940-03-03 ;
++    crm:P4_has_time-span wti:time_unknown-1940-03-03 ;
+     crm:P7_took_place_at <http://ldf.fi/warsa/places/karelian_places/k_place_1468> ;
+     skos:prefLabel "Pehmo-Siankärsä-Mannikkala"@fi .
+ 
+--- a/warsa-event-data/times.ttl
++++ b/warsa-event-data/times.ttl
+@@ -86015,12 +86015,6 @@
+     a crm:E52_Time-Span ;
+     skos:prefLabel "1939-12-22-1939-12-29" .
+ 
+-wti:time_1939-12-22-1939-12-35
+-    crm:P82a_begin_of_the_begin "1939-12-22"^^xsd:date ;
+-    crm:P82b_end_of_the_end "1939-12-35"^^xsd:date ;
+-    a crm:E52_Time-Span ;
+-    skos:prefLabel "1939-12-22-1939-12-35" .
+-
+ wti:time_1939-12-22-1939-12-31
+     crm:P82a_begin_of_the_begin "1939-12-22"^^xsd:date ;
+     crm:P82b_end_of_the_end "1939-12-31"^^xsd:date ;
+@@ -92987,11 +92981,11 @@
+     a crm:E52_Time-Span ;
+     skos:prefLabel "1940-02-29-1940-05-15" .
+ 
+-wti:time_1940-02-30-1940-03-03
+-    crm:P82a_begin_of_the_begin "1940-02-30"^^xsd:date ;
++wti:time_unknown-1940-03-03
+     crm:P82b_end_of_the_end "1940-03-03"^^xsd:date ;
++    crm:P3_has_note "The source start date is 1940-02-30, which is not a valid calendar date; the start bound is unresolved."@en ;
+     a crm:E52_Time-Span ;
+-    skos:prefLabel "1940-02-30-1940-03-03" .
++    skos:prefLabel "unknown-1940-03-03" .
+ 
+ wti:time_1940-03-01-1940-03-01
+     crm:P82a_begin_of_the_begin "1940-03-01"^^xsd:date ;

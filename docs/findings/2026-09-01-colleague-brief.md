@@ -1,7 +1,7 @@
 # WarSampo linked-data linting: findings brief
 
 **Snapshot:** 2026-09-01  
-**Scope:** 60 strictly parseable RDF modules, 13,733,789 source triples  
+**Scope:** all 61 RDF modules, 13,873,089 source triples  
 **Method:** 16 cumulative RDF, SKOS, and WarSampo SHACL rules executed with Apache Jena
 
 ## What the prototype demonstrates
@@ -27,9 +27,11 @@ The results are concentrated rather than corpus-wide: 79 of 123 violations occur
 
 One additional vocabulary result uses the DCMI namespace resource itself as a class; its intended replacement is ambiguous and is not automated.
 
-## Important limitation found by strict parsing
+## Source defects found by strict parsing
 
-`warsampo/warsa-event-data/times.ttl` contains `"1939-12-35"^^xsd:date` at line 86,020. This is invalid RDF datatype lexical content. The linter fails closed: it reports the parse error, skips union validation, and will not publish a partial SHACL report or baseline.
+`warsampo/warsa-event-data/times.ttl` contained two invalid calendar dates: `1939-12-35` and `1940-02-30`. The [reviewable correction proposal](../../proposals/source-corrections/2026-09-01-invalid-dates/README.md) repoints the corroborated Parissavaara event to December 22–23 and marks the historically unresolved February start as unknown rather than guessing a date. With the proposal applied locally, all 61 modules now pass strict parsing and contribute to the baseline.
+
+This demonstrates a separate class of error from SHACL findings: malformed datatype content prevents trustworthy graph validation. The linter fails closed and will not publish a partial report or baseline when parsing is incomplete.
 
 ## Suggested five-minute demonstration
 
@@ -58,6 +60,6 @@ The repair engine checks the applicable validation profile, requires a correspon
 2. Confirm whether the two death events represent duplicate links or genuinely multi-person events.
 3. Choose the canonical WarSampo `Conflict` class namespace.
 4. Approve the 15 exact vocabulary substitutions as the first cleanup change.
-5. Correct or formally replace the invalid `1939-12-35` date so all modules can participate in complete validation.
+5. Review and submit the two-date source correction to the owning data repository or generation pipeline.
 
-Detailed evidence is available in the [baseline record](../baselines/2026-09-01-warsampo.md), the [machine-readable baseline](../../baselines/warsampo-local.tsv), and the [project requirement catalog](../rules/warsampo-requirements.md).
+Detailed evidence is available in the [baseline record](../baselines/2026-09-01-warsampo.md), the [machine-readable baseline](../../baselines/warsampo-local.tsv), the [verified 15-change repair proposal](../../proposals/repairs/2026-09-01-standard-term-typos/README.md), the [domain-review packet](./2026-09-01-domain-review.md), and the [project requirement catalog](../rules/warsampo-requirements.md).
