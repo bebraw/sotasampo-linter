@@ -30,41 +30,43 @@ final class ValidationService {
 
     ValidationRun run() throws IOException {
         Instant start = Instant.now();
-        RuntimeMetrics.resetPeakHeap();
-        List<Path> dataFiles = RdfFiles.discover(options.dataPaths());
-        if (dataFiles.isEmpty()) {
-            throw new IllegalArgumentException("No RDF files found in the selected data paths.");
+        try (RuntimeMetrics.HeapTracker heap = RuntimeMetrics.trackHeap()) {
+            List<Path> dataFiles = RdfFiles.discover(options.dataPaths());
+            if (dataFiles.isEmpty()) {
+                throw new IllegalArgumentException("No RDF files found in the selected data paths.");
+            }
+            options.requireSafeOutputPaths(dataFiles);
+
+            Model localShapeModel = loader.loadAll(RdfFiles.discoverRequiredDirectories(
+                    options.profile().localShapeDirectories(options.root())));
+            Shapes localShapes = Shapes.parse(localShapeModel.getGraph());
+            Model unionShapeModel = options.crossModule()
+                    ? loader.loadAll(RdfFiles.discoverRequiredDirectories(
+                            options.profile().unionShapeDirectories(options.root())))
+                    : ModelFactory.createDefaultModel();
+            Shapes unionShapes = options.crossModule() ? Shapes.parse(unionShapeModel.getGraph()) : null;
+            int ruleCount = countRules(localShapeModel, unionShapeModel);
+
+            Path vocabularyDirectory = options.root().resolve("vocabularies");
+            List<Path> vocabularyFiles = RdfFiles.discoverRequiredDirectories(List.of(vocabularyDirectory));
+            Model supportModel = loader.loadAll(vocabularyFiles);
+            addAuditConfiguration(supportModel);
+
+            Set<String> baseline = Baseline.read(options.baselinePath());
+            ValidationAccumulator accumulator = options.crossModule()
+                    ? validateUnion(dataFiles, localShapes, unionShapes, supportModel)
+                    : validateModules(dataFiles, localShapes, supportModel);
+
+            return ValidationRun.of(
+                    accumulator.findings,
+                    accumulator.parseFailures,
+                    accumulator.modules,
+                    accumulator.triples,
+                    ruleCount,
+                    heap.peakHeapBytes(),
+                    Duration.between(start, Instant.now()),
+                    baseline);
         }
-
-        Model localShapeModel = loader.loadAll(RdfFiles.discoverRequiredDirectories(
-                options.profile().localShapeDirectories(options.root())));
-        Shapes localShapes = Shapes.parse(localShapeModel.getGraph());
-        Model crossShapeModel = options.crossModule()
-                ? loader.loadAll(RdfFiles.discoverRequiredDirectories(
-                        options.profile().crossShapeDirectories(options.root())))
-                : ModelFactory.createDefaultModel();
-        Shapes crossShapes = options.crossModule() ? Shapes.parse(crossShapeModel.getGraph()) : null;
-        int ruleCount = countRules(localShapeModel) + countRules(crossShapeModel);
-
-        Path vocabularyDirectory = options.root().resolve("vocabularies");
-        List<Path> vocabularyFiles = RdfFiles.discoverRequiredDirectories(List.of(vocabularyDirectory));
-        Model supportModel = loader.loadAll(vocabularyFiles);
-        addAuditConfiguration(supportModel);
-
-        Set<String> baseline = Baseline.read(options.baselinePath());
-        ValidationAccumulator accumulator = options.crossModule()
-                ? validateUnion(dataFiles, localShapes, crossShapes, supportModel)
-                : validateModules(dataFiles, localShapes, supportModel);
-
-        return ValidationRun.of(
-                accumulator.findings,
-                accumulator.parseFailures,
-                accumulator.modules,
-                accumulator.triples,
-                ruleCount,
-                RuntimeMetrics.peakHeapBytes(),
-                Duration.between(start, Instant.now()),
-                baseline);
     }
 
     private ValidationAccumulator validateModules(List<Path> files, Shapes shapes, Model supportModel) {
@@ -87,7 +89,7 @@ final class ValidationService {
     }
 
     private ValidationAccumulator validateUnion(
-            List<Path> files, Shapes localShapes, Shapes crossShapes, Model supportModel) throws IOException {
+            List<Path> files, Shapes localShapes, Shapes unionShapes, Model supportModel) throws IOException {
         boolean temporary = options.tdbPath() == null;
         Path tdbPath = temporary ? Files.createTempDirectory("warsampo-linter-tdb-") : options.tdbPath();
         if (!temporary) {
@@ -123,18 +125,27 @@ final class ValidationService {
                 accumulator.modules++;
             }
 
-            dataset.begin(ReadWrite.WRITE);
-            try {
-                dataset.getDefaultModel().add(supportModel);
-                dataset.commit();
-            } finally {
-                dataset.end();
-            }
-            dataset.begin(ReadWrite.READ);
-            try {
-                collect(crossShapes, dataset.getDefaultModel(), "@union", accumulator);
-            } finally {
-                dataset.end();
+            if (accumulator.parseFailures.isEmpty()) {
+                dataset.begin(ReadWrite.WRITE);
+                try {
+                    dataset.getDefaultModel().add(supportModel);
+                    dataset.commit();
+                } finally {
+                    dataset.end();
+                }
+                dataset.begin(ReadWrite.READ);
+                try {
+                    Set<String> localKeys = accumulator.findings.stream()
+                            .map(Finding::semanticKey)
+                            .collect(java.util.stream.Collectors.toSet());
+                    ValidationAccumulator unionAccumulator = new ValidationAccumulator();
+                    collect(unionShapes, dataset.getDefaultModel(), "@union", unionAccumulator);
+                    unionAccumulator.findings.stream()
+                            .filter(finding -> !localKeys.contains(finding.semanticKey()))
+                            .forEach(accumulator.findings::add);
+                } finally {
+                    dataset.end();
+                }
             }
         } finally {
             dataset.close();
@@ -149,9 +160,10 @@ final class ValidationService {
         ValidationReport report = ShaclValidator.get().validate(shapes, data.getGraph());
         Model reportModel = ModelFactory.createModelForGraph(report.getGraph());
         List<Resource> resources = reportModel.listResourcesWithProperty(RDF.type, Finding.VALIDATION_RESULT).toList();
-        resources.stream()
-                .map(resource -> Finding.from(resource, reportModel, module))
-                .forEach(accumulator.findings::add);
+        List<Finding> findings = resources.stream()
+                .map(resource -> Finding.from(resource, reportModel, data, module))
+                .toList();
+        accumulator.findings.addAll(Finding.normalizeOccurrences(findings));
     }
 
     private void addAuditConfiguration(Model model) {
@@ -178,12 +190,13 @@ final class ValidationService {
         return current.getMessage() == null ? current.getClass().getSimpleName() : current.getMessage();
     }
 
-    private static int countRules(Model shapeModel) {
-        return (int) shapeModel
-                .listSubjectsWithProperty(
-                        org.apache.jena.rdf.model.ResourceFactory.createProperty(Finding.SH + "severity"))
-                .toList()
-                .stream()
+    private static int countRules(Model... shapeModels) {
+        return (int) java.util.Arrays.stream(shapeModels)
+                .flatMap(shapeModel -> shapeModel
+                        .listSubjectsWithProperty(
+                                org.apache.jena.rdf.model.ResourceFactory.createProperty(Finding.SH + "severity"))
+                        .toList()
+                        .stream())
                 .filter(Resource::isURIResource)
                 .distinct()
                 .count();

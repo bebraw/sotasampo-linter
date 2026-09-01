@@ -31,6 +31,7 @@ final class ShaclReportWriter {
             triples.add(triple(result, RDF_TYPE, iri(SH + "ValidationResult")));
             addTerm(triples, result, SH + "resultSeverity", finding.severity());
             addTerm(triples, result, SH + "sourceShape", finding.rule());
+            addTerm(triples, result, SH + "sourceConstraintComponent", finding.constraintComponent());
             addTerm(triples, result, SH + "focusNode", finding.focus());
             addTerm(triples, result, SH + "resultPath", finding.path());
             addTerm(triples, result, SH + "value", finding.value());
@@ -44,7 +45,7 @@ final class ShaclReportWriter {
         List<String> lines = new ArrayList<>();
         lines.add("# Deterministic N-Triples subset of Turtle");
         lines.addAll(new TreeSet<>(triples));
-        Files.write(path, lines, StandardCharsets.UTF_8);
+        AtomicFiles.writeLines(path, lines);
     }
 
     private static void addTerm(List<String> triples, String subject, String predicate, String term) {

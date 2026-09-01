@@ -18,6 +18,10 @@ enum Profile {
         }
     }
 
+    static Profile broader(Profile first, Profile second) {
+        return first.ordinal() >= second.ordinal() ? first : second;
+    }
+
     List<Path> localShapeDirectories(Path root) {
         List<Path> paths = new ArrayList<>();
         paths.add(root.resolve("shapes/core"));
@@ -25,24 +29,21 @@ enum Profile {
             paths.add(root.resolve("shapes/vocabularies/skos"));
         }
         if (this == WARSAMPO) {
+            paths.add(root.resolve("shapes/warsampo/requirements"));
             paths.add(root.resolve("shapes/warsampo/local"));
         }
         return List.copyOf(paths);
     }
 
-    List<Path> crossShapeDirectories(Path root) {
+    List<Path> unionShapeDirectories(Path root) {
         List<Path> paths = new ArrayList<>();
         paths.add(root.resolve("shapes/integration"));
-        if (this == WARSAMPO) {
-            paths.add(root.resolve("shapes/warsampo/cross"));
+        if (this == SKOS || this == WARSAMPO) {
+            paths.add(root.resolve("shapes/vocabularies/skos"));
         }
-        return List.copyOf(paths);
-    }
-
-    List<Path> shapeDirectories(Path root, boolean crossModule) {
-        List<Path> paths = new ArrayList<>(localShapeDirectories(root));
-        if (crossModule) {
-            paths.addAll(crossShapeDirectories(root));
+        if (this == WARSAMPO) {
+            paths.add(root.resolve("shapes/warsampo/requirements"));
+            paths.add(root.resolve("shapes/warsampo/cross"));
         }
         return List.copyOf(paths);
     }

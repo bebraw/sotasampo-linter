@@ -37,7 +37,7 @@ final class StableTerm {
         if (!node.isBlank()) {
             return NodeFmtLib.strNT(node);
         }
-        if (depth >= 3 || !seen.add(node)) {
+        if (depth >= 16 || !seen.add(node)) {
             return "_:cycle";
         }
 

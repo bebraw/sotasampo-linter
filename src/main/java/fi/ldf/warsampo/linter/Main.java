@@ -73,16 +73,16 @@ public final class Main {
 
                 Validate options:
                   --profile NAME          core, skos, or warsampo (default: warsampo)
-                  --cross-module          Validate one disk-backed union graph
-                  --report PATH           Write the aggregate SHACL report as Turtle
+                  --cross-module          Validate a complete disk-backed union graph
+                  --report PATH           Write a complete aggregate SHACL report as Turtle
                   --summary PATH          Write the stable human-readable summary
-                  --baseline PATH         Compare findings with a committed baseline
-                  --write-baseline PATH   Write the current findings as a baseline
+                  --baseline PATH         Compare violations with a committed baseline
+                  --write-baseline PATH   Write complete current violations as a baseline
                   --tdb PATH              Reuse an empty caller-owned TDB2 directory
                   --root PATH             Repository root (default: current directory)
 
                 Repair options:
-                  --profile NAME          Validation guard: core, skos, or warsampo (default: core)
+                  --profile NAME          Minimum guard: core, skos, or warsampo (default: core)
                   --repair ID             Select a repair by IRI or local ID (repeatable)
                   --all-automatic         Select all automatic repairs (default)
                   --dry-run               Print/write a patch without changing data (default)

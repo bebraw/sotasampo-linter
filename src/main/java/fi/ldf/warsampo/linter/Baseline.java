@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 final class Baseline {
-    private static final String HEADER = "# warsampo-linter baseline v1";
+    private static final String HEADER = "# warsampo-linter baseline v2";
 
     private Baseline() {}
 
@@ -25,7 +25,19 @@ final class Baseline {
             if (line.isBlank() || line.startsWith("#")) {
                 continue;
             }
-            signatures.add(line.split("\\t", 2)[0]);
+            String[] fields = line.split("\\t", 3);
+            if (fields.length < 2) {
+                throw new IllegalArgumentException("Malformed baseline entry in " + path + ": " + line);
+            }
+            String severity = fields[1];
+            if (!severity.equals("<" + Finding.SH + "Violation>")
+                    && !severity.equals("<" + Finding.SH + "Warning>")
+                    && !severity.equals("<" + Finding.SH + "Info>")) {
+                throw new IllegalArgumentException("Malformed baseline severity in " + path + ": " + severity);
+            }
+            if (severity.equals("<" + Finding.SH + "Violation>")) {
+                signatures.add(fields[0]);
+            }
         }
         return Set.copyOf(signatures);
     }
@@ -34,17 +46,21 @@ final class Baseline {
         ensureParent(path);
         List<String> lines = new java.util.ArrayList<>();
         lines.add(HEADER);
-        lines.add("# signature\tseverity\trule\tfocus\tpath\tvalue\tsource\tmessage");
-        findings.stream().sorted(Finding.ORDER).forEach(finding -> lines.add(String.join("\t",
-                finding.signature(),
-                escape(finding.severity()),
-                escape(finding.rule()),
-                escape(finding.focus()),
-                escape(finding.path()),
-                escape(finding.value()),
-                escape(finding.sourceModule()),
-                escape(finding.message()))));
-        Files.write(path, lines, StandardCharsets.UTF_8);
+        lines.add("# signature\tseverity\trule\tconstraint-component\tfocus\tpath\tvalue\tsource\tmessage");
+        findings.stream()
+                .filter(Finding::isViolation)
+                .sorted(Finding.ORDER)
+                .forEach(finding -> lines.add(String.join("\t",
+                        finding.signature(),
+                        escape(finding.severity()),
+                        escape(finding.rule()),
+                        escape(finding.constraintComponent()),
+                        escape(finding.focus()),
+                        escape(finding.path()),
+                        escape(finding.value()),
+                        escape(finding.sourceModule()),
+                        escape(finding.message()))));
+        AtomicFiles.writeLines(path, lines);
     }
 
     static void ensureParent(Path path) throws IOException {

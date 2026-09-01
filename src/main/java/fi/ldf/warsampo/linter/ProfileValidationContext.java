@@ -37,9 +37,9 @@ final class ProfileValidationContext {
         List<Resource> resources = reportModel
                 .listResourcesWithProperty(RDF.type, Finding.VALIDATION_RESULT)
                 .toList();
-        return resources.stream()
-                .map(resource -> Finding.from(resource, reportModel, module))
-                .sorted(Finding.ORDER)
+        List<Finding> findings = resources.stream()
+                .map(resource -> Finding.from(resource, reportModel, data, module))
                 .toList();
+        return Finding.normalizeOccurrences(findings);
     }
 }

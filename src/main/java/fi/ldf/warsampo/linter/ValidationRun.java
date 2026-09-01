@@ -28,13 +28,17 @@ record ValidationRun(
 
         if (options.summaryPath() != null) {
             Baseline.ensureParent(options.summaryPath());
-            Files.write(options.summaryPath(), summary, StandardCharsets.UTF_8);
+            AtomicFiles.writeLines(options.summaryPath(), summary);
         }
-        if (options.reportPath() != null) {
+        boolean complete = parseFailures.isEmpty();
+        if (options.reportPath() != null && complete) {
             ShaclReportWriter.write(options.reportPath(), findings);
         }
-        if (options.writeBaselinePath() != null) {
+        if (options.writeBaselinePath() != null && complete) {
             Baseline.write(options.writeBaselinePath(), findings);
+        }
+        if (!complete && (options.reportPath() != null || options.writeBaselinePath() != null)) {
+            out.println("SHACL report and baseline output suppressed because validation was incomplete.");
         }
     }
 
@@ -44,7 +48,7 @@ record ValidationRun(
         long info = findings.size() - violations - warnings;
         List<String> lines = new java.util.ArrayList<>();
         lines.add("Validated " + modules + " module(s), " + triples + " triples in " + duration.toMillis() + " ms");
-        lines.add("Rules: " + rules + "; peak JVM heap: " + formatMebibytes(peakHeapBytes) + " MiB");
+        lines.add("Rules: " + rules + "; sampled peak JVM heap: " + formatMebibytes(peakHeapBytes) + " MiB");
         lines.add("Findings: " + violations + " violation(s), " + warnings + " warning(s), " + info + " info");
         lines.add("New violations: " + regressions.size());
         if (!parseFailures.isEmpty()) {
