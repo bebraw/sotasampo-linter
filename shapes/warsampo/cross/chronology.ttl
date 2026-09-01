@@ -8,7 +8,7 @@ linter:BirthDeathChronologyShape
     sh:targetNode linter:auditTarget ;
     sh:severity sh:Violation ;
     sh:message "A person's latest possible birth date is after their earliest possible death date." ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/life-event-chronology> ;
+    dct:source linter:LifeEventChronologyRequirement ;
     linter:layer linter:DomainLayer ;
     sh:sparql [
         a sh:SPARQLConstraint ;

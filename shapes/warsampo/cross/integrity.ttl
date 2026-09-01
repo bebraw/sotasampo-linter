@@ -8,7 +8,7 @@ linter:InternalReferenceShape
     sh:targetNode linter:auditTarget ;
     sh:severity sh:Warning ;
     sh:message "An internal WarSampo IRI is referenced but has no description in the selected union graph." ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/internal-reference> ;
+    dct:source linter:InternalReferenceRequirement ;
     linter:layer linter:IntegrationLayer ;
     sh:sparql [
         a sh:SPARQLConstraint ;
@@ -36,7 +36,7 @@ linter:EventParticipantTypeShape
     sh:targetNode linter:auditTarget ;
     sh:severity sh:Warning ;
     sh:message "A WarSampo event participant must resolve to a typed person or military unit." ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/event-participant> ;
+    dct:source linter:EventParticipantRequirement ;
     linter:layer linter:IntegrationLayer ;
     sh:sparql [
         a sh:SPARQLConstraint ;

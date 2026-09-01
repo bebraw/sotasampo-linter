@@ -1,0 +1,37 @@
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix linter: <https://w3id.org/warsampo-linter#> .
+
+# Accepted, repository-local project contracts. Their rationale and evidence are
+# documented in docs/rules/warsampo-requirements.md.
+
+linter:BirthPersonRequirement
+    a linter:ProjectRequirement ;
+    dct:description "A WarSampo Birth event identifies exactly one person through CIDOC CRM P98." .
+
+linter:DeathPersonRequirement
+    a linter:ProjectRequirement ;
+    dct:description "A WarSampo Death event identifies exactly one person through CIDOC CRM P100." .
+
+linter:UnitJoiningRequirement
+    a linter:ProjectRequirement ;
+    dct:description "A UnitJoining event identifies one joining unit and one receiving unit, and they differ." .
+
+linter:MedalAwardingRequirement
+    a linter:ProjectRequirement ;
+    dct:description "A MedalAwarding event identifies exactly one medal and one recipient." .
+
+linter:ConflictClassRequirement
+    a linter:ProjectRequirement ;
+    dct:description "The two Conflict class namespaces in the WarSampo schema require human review." .
+
+linter:LifeEventChronologyRequirement
+    a linter:ProjectRequirement ;
+    dct:description "A person's latest possible birth date must not be later than their earliest possible death date." .
+
+linter:InternalReferenceRequirement
+    a linter:ProjectRequirement ;
+    dct:description "An internal WarSampo IRI referenced by the selected dataset should be described in its union graph." .
+
+linter:EventParticipantRequirement
+    a linter:ProjectRequirement ;
+    dct:description "WarSampo actor IRIs used as event participants should resolve to a typed person or military unit." .

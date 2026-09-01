@@ -8,7 +8,7 @@ linter:BirthPersonNodeShape
     a sh:NodeShape ;
     sh:targetClass wsc:Birth ;
     sh:property linter:BirthPersonPropertyShape ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/birth-person> ;
+    dct:source linter:BirthPersonRequirement ;
     linter:layer linter:DomainLayer .
 
 linter:BirthPersonPropertyShape
@@ -18,13 +18,15 @@ linter:BirthPersonPropertyShape
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:severity sh:Violation ;
-    sh:message "A WarSampo birth event must identify exactly one person brought into life." .
+    sh:message "A WarSampo birth event must identify exactly one person brought into life." ;
+    dct:source linter:BirthPersonRequirement ;
+    linter:layer linter:DomainLayer .
 
 linter:DeathPersonNodeShape
     a sh:NodeShape ;
     sh:targetClass wsc:Death ;
     sh:property linter:DeathPersonPropertyShape ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/death-person> ;
+    dct:source linter:DeathPersonRequirement ;
     linter:layer linter:DomainLayer .
 
 linter:DeathPersonPropertyShape
@@ -34,22 +36,9 @@ linter:DeathPersonPropertyShape
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:severity sh:Violation ;
-    sh:message "A WarSampo death event must identify exactly one deceased person." .
-
-linter:EventTimeSpanNodeShape
-    a sh:NodeShape ;
-    sh:targetSubjectsOf crm:P4_has_time-span ;
-    sh:property linter:EventTimeSpanPropertyShape ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/event-time-span> ;
-    linter:layer linter:StructuralLayer .
-
-linter:EventTimeSpanPropertyShape
-    a sh:PropertyShape ;
-    sh:path crm:P4_has_time-span ;
-    sh:maxCount 1 ;
-    sh:nodeKind sh:IRI ;
-    sh:severity sh:Violation ;
-    sh:message "A WarSampo event must not have more than one time-span resource." .
+    sh:message "A WarSampo death event must identify exactly one deceased person." ;
+    dct:source linter:DeathPersonRequirement ;
+    linter:layer linter:DomainLayer .
 
 linter:UnitJoiningNodeShape
     a sh:NodeShape ;
@@ -57,7 +46,8 @@ linter:UnitJoiningNodeShape
     sh:property linter:UnitJoiningChildPropertyShape ;
     sh:property linter:UnitJoiningParentPropertyShape ;
     sh:severity sh:Violation ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/unit-joining> ;
+    sh:message "A military unit cannot join itself." ;
+    dct:source linter:UnitJoiningRequirement ;
     linter:layer linter:DomainLayer ;
     sh:sparql [
         a sh:SPARQLConstraint ;
@@ -78,7 +68,9 @@ linter:UnitJoiningChildPropertyShape
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:severity sh:Violation ;
-    sh:message "A unit-joining event must identify exactly one joining unit." .
+    sh:message "A unit-joining event must identify exactly one joining unit." ;
+    dct:source linter:UnitJoiningRequirement ;
+    linter:layer linter:DomainLayer .
 
 linter:UnitJoiningParentPropertyShape
     a sh:PropertyShape ;
@@ -87,14 +79,16 @@ linter:UnitJoiningParentPropertyShape
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:severity sh:Violation ;
-    sh:message "A unit-joining event must identify exactly one receiving unit." .
+    sh:message "A unit-joining event must identify exactly one receiving unit." ;
+    dct:source linter:UnitJoiningRequirement ;
+    linter:layer linter:DomainLayer .
 
 linter:MedalAwardingNodeShape
     a sh:NodeShape ;
     sh:targetClass wsc:MedalAwarding ;
     sh:property linter:MedalAwardingMedalPropertyShape ;
     sh:property linter:MedalAwardingRecipientPropertyShape ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/medal-awarding> ;
+    dct:source linter:MedalAwardingRequirement ;
     linter:layer linter:DomainLayer .
 
 linter:MedalAwardingMedalPropertyShape
@@ -104,7 +98,9 @@ linter:MedalAwardingMedalPropertyShape
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:severity sh:Violation ;
-    sh:message "A medal-awarding event must assign exactly one medal." .
+    sh:message "A medal-awarding event must assign exactly one medal." ;
+    dct:source linter:MedalAwardingRequirement ;
+    linter:layer linter:DomainLayer .
 
 linter:MedalAwardingRecipientPropertyShape
     a sh:PropertyShape ;
@@ -113,4 +109,6 @@ linter:MedalAwardingRecipientPropertyShape
     sh:maxCount 1 ;
     sh:nodeKind sh:IRI ;
     sh:severity sh:Violation ;
-    sh:message "A medal-awarding event must identify exactly one recipient." .
+    sh:message "A medal-awarding event must identify exactly one recipient." ;
+    dct:source linter:MedalAwardingRequirement ;
+    linter:layer linter:DomainLayer .

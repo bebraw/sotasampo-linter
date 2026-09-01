@@ -8,7 +8,7 @@ linter:ConflictClassNamespaceShape
     sh:targetNode wacs:hasConflict ;
     sh:severity sh:Warning ;
     sh:message "WarSampo defines a local Conflict class but hasConflict ranges over the conflicts vocabulary class; confirm the intended namespace." ;
-    dct:source <https://w3id.org/warsampo-linter/requirements/conflict-class> ;
+    dct:source linter:ConflictClassRequirement ;
     linter:layer linter:DomainLayer ;
     sh:sparql [
         a sh:SPARQLConstraint ;

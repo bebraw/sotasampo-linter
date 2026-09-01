@@ -6,8 +6,8 @@
 linter:SkosBroaderSelfShape
     a sh:NodeShape ;
     sh:targetSubjectsOf skos:broader ;
-    sh:severity sh:Violation ;
-    sh:message "A SKOS concept cannot be broader than itself." ;
+    sh:severity sh:Warning ;
+    sh:message "A reflexive SKOS broader link is legal but may be unsuitable for this application." ;
     dct:source <https://www.w3.org/TR/skos-reference/#semantic-relations> ;
     linter:layer linter:VocabularyLayer ;
     sh:sparql [
@@ -38,8 +38,8 @@ linter:SkosBroaderCycleShape
 linter:SkosRelatedSelfShape
     a sh:NodeShape ;
     sh:targetSubjectsOf skos:related ;
-    sh:severity sh:Violation ;
-    sh:message "A SKOS concept cannot be related to itself." ;
+    sh:severity sh:Warning ;
+    sh:message "A reflexive SKOS related link is legal but may be unsuitable for this application." ;
     dct:source <https://www.w3.org/TR/skos-reference/#semantic-relations> ;
     linter:layer linter:VocabularyLayer ;
     sh:sparql [
