@@ -24,7 +24,7 @@ The profiles are cumulative:
 | `skos` | 8 | Core plus SKOS label and relation integrity |
 | `warsampo` | 16 | SKOS plus WarSampo event, role, schema, and domain rules |
 
-With `--cross-module`, local rules still run once per source module. Six reusable SKOS rules are then re-evaluated over a disk-backed union to catch facts split across files, and four explicitly integration-scoped rules run there as well. Results already found locally are de-duplicated. If any source fails to parse, union validation is skipped rather than querying an incomplete graph. Union progress identifies each rule and focus-node count as it runs; a successful summary includes the elapsed time per union rule. The full WarSampo union audit is intentionally opt-in; see [the current baseline record](./docs/baselines/2026-09-01-warsampo.md) for its performance limitation.
+With `--cross-module`, local rules still run once per source module. Six reusable SKOS rules are then re-evaluated over a disk-backed union to catch facts split across files, and four explicitly integration-scoped rules run there as well. Results already found locally are de-duplicated. If any source fails to parse, union validation is skipped rather than querying an incomplete graph. Union progress identifies each rule and focus-node count as it runs; a successful summary includes the elapsed time per union rule. The full WarSampo union audit is intentionally opt-in; see the [completed audit record](./docs/baselines/2026-09-01-warsampo-union.md) for its findings and performance profile.
 
 Only RDF triple syntaxes are accepted. TriG, N-Quads, and other dataset syntaxes are rejected explicitly until the project defines how named graphs map to source modules and union validation.
 
@@ -127,5 +127,6 @@ GitHub Actions runs the Java fixture/repair suite and the pySHACL compatibility 
 - [ADR-001: Adopt SHACL for Linked-Data Linting and Guarded Repair](./docs/adrs/implemented/ADR-001-adopt-shacl-for-linked-data-linting-and-repair.md)
 - [WarSampo project requirements](./docs/rules/warsampo-requirements.md)
 - [Current WarSampo baseline record, 2026-09-01](./docs/baselines/2026-09-01-warsampo.md)
+- [WarSampo cross-module audit, 2026-09-01](./docs/baselines/2026-09-01-warsampo-union.md)
 - [Colleague-facing findings brief](./docs/findings/2026-09-01-colleague-brief.md)
 - [Invalid event-date correction proposal](./proposals/source-corrections/2026-09-01-invalid-dates/README.md)

@@ -33,6 +33,18 @@ One additional vocabulary result uses the DCMI namespace resource itself as a cl
 
 This demonstrates a separate class of error from SHACL findings: malformed datatype content prevents trustworthy graph validation. The linter fails closed and will not publish a partial report or baseline when parsing is incomplete.
 
+## What combining all modules reveals
+
+The completed disk-backed union audit adds 1,643 violations and 379 warnings that cannot be seen reliably one file at a time:
+
+| Cross-module finding | Results | Main pattern |
+| --- | ---: | --- |
+| Multiple preferred labels per language | 1,643 violations | 806 birth and 806 death event IRIs receive different name-order labels from actor and casualty exports; 31 person or naming resources also conflict. |
+| Unresolved internal references | 334 warnings | Primarily 183 unit-category and 119 actor IRIs without an outgoing description. |
+| Untyped event participants | 45 warnings | 32 `actor_*` and 13 `person_*` aliases do not resolve to the required direct type. |
+
+No new duplicate `dct:identifier` values, life-event chronology errors, SKOS cycles, hierarchy/relation conflicts, reflexive links, or cross-file label-role overlaps were found. The audit now completes in 6m30s with a 2.37 GiB sampled heap peak; its exact timings and examples are in the [cross-module audit record](../baselines/2026-09-01-warsampo-union.md).
+
 ## Suggested five-minute demonstration
 
 ```sh
@@ -56,10 +68,11 @@ The repair engine checks the applicable validation profile, requires a correspon
 
 ## Decisions requested from colleagues
 
-1. Confirm the intended modeling of unit-joining events with multiple joining units.
-2. Confirm whether the two death events represent duplicate links or genuinely multi-person events.
-3. Choose the canonical WarSampo `Conflict` class namespace.
-4. Approve the 15 exact vocabulary substitutions as the first cleanup change.
-5. Review and submit the two-date source correction to the owning data repository or generation pipeline.
+1. Confirm whether actor-data and casualties-data exports are intended to coexist in one RDF union; if so, choose the canonical preferred-label convention.
+2. Confirm the intended modeling of unit-joining events with multiple joining units.
+3. Confirm whether the two death events represent duplicate links or genuinely multi-person events.
+4. Choose the canonical WarSampo `Conflict` class namespace.
+5. Approve the 15 exact vocabulary substitutions as the first cleanup change.
+6. Review and submit the two-date source correction to the owning data repository or generation pipeline.
 
-Detailed evidence is available in the [baseline record](../baselines/2026-09-01-warsampo.md), the [machine-readable baseline](../../baselines/warsampo-local.tsv), the [verified 15-change repair proposal](../../proposals/repairs/2026-09-01-standard-term-typos/README.md), the [domain-review packet](./2026-09-01-domain-review.md), and the [project requirement catalog](../rules/warsampo-requirements.md).
+Detailed evidence is available in the [local baseline record](../baselines/2026-09-01-warsampo.md), the [cross-module audit record](../baselines/2026-09-01-warsampo-union.md), the [machine-readable local baseline](../../baselines/warsampo-local.tsv), the [verified 15-change repair proposal](../../proposals/repairs/2026-09-01-standard-term-typos/README.md), the [domain-review packet](./2026-09-01-domain-review.md), and the [project requirement catalog](../rules/warsampo-requirements.md).
